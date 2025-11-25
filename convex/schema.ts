@@ -4,7 +4,7 @@ import { v } from "convex/values";
 
 const schema = defineSchema({
   ...authTables,
-  
+
   // API Keys
   apiKeys: defineTable({
     userId: v.id("users"),
@@ -50,6 +50,7 @@ const schema = defineSchema({
     crawlDepth: v.optional(v.number()), // max depth to crawl
     lastCrawlAt: v.optional(v.number()),
     totalPages: v.optional(v.number()), // total pages found in last crawl
+    deepAnalysisEnabled: v.optional(v.boolean()), // Enable following links for deep analysis
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -117,7 +118,7 @@ const schema = defineSchema({
     .index("by_user", ["userId"])
     .index("by_email", ["email"])
     .index("by_token", ["verificationToken"]),
-    
+
   // User settings for defaults
   userSettings: defineTable({
     userId: v.id("users"),
@@ -134,6 +135,8 @@ const schema = defineSchema({
     // AI-based notification filtering
     emailOnlyIfMeaningful: v.optional(v.boolean()), // only send email if AI deems meaningful
     webhookOnlyIfMeaningful: v.optional(v.boolean()), // only send webhook if AI deems meaningful
+    // Go/No Go Matrix
+    goNoGoRules: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

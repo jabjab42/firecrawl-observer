@@ -30,6 +30,7 @@ export const getUserSettings = query({
         aiApiKey: null,
         emailOnlyIfMeaningful: false,
         webhookOnlyIfMeaningful: false,
+        goNoGoRules: null,
       };
     }
 
@@ -176,6 +177,7 @@ export const updateAISettings = mutation({
     systemPrompt: v.optional(v.string()),
     threshold: v.optional(v.number()),
     apiKey: v.optional(v.string()),
+    goNoGoRules: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
@@ -237,6 +239,7 @@ Analyze the provided diff and return a JSON response with:
       ...(args.systemPrompt !== undefined && { aiSystemPrompt: args.systemPrompt || defaultPrompt }),
       ...(args.threshold !== undefined && { aiMeaningfulChangeThreshold: args.threshold }),
       ...(encryptedApiKey !== undefined && { aiApiKey: encryptedApiKey }),
+      ...(args.goNoGoRules !== undefined && { goNoGoRules: args.goNoGoRules }),
       updatedAt: now,
     };
 
@@ -278,11 +281,11 @@ export const updateNotificationFiltering = mutation({
       const updateData: any = {
         updatedAt: now,
       };
-      
+
       if (args.emailOnlyIfMeaningful !== undefined) {
         updateData.emailOnlyIfMeaningful = args.emailOnlyIfMeaningful;
       }
-      
+
       if (args.webhookOnlyIfMeaningful !== undefined) {
         updateData.webhookOnlyIfMeaningful = args.webhookOnlyIfMeaningful;
       }

@@ -6,24 +6,117 @@ import FirecrawlApp from "@mendable/firecrawl-js";
 import { requireCurrentUserForAction } from "./helpers";
 
 // Initialize Firecrawl client with user's API key
-export const getFirecrawlClient = async (ctx: any, userId: string) => {
+// Custom Firecrawl client for self-hosted instances (v0 support)
+class CustomFirecrawlApp {
+  private apiKey: string;
+  private apiUrl: string;
+
+  constructor({ apiKey, apiUrl }: { apiKey: string; apiUrl: string }) {
+    this.apiKey = apiKey;
+    this.apiUrl = apiUrl.replace(/\/$/, "");
+  }
+
+  async scrapeUrl(url: string, params: any) {
+    // Use v1 endpoint (confirmed working by user)
+    const endpoint = `${this.apiUrl}/v1/scrape`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Auth-Token": this.apiKey, // Self-hosted often uses this
+        },
+        body: JSON.stringify({ url, ...params }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { success: true, ...data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async crawlUrl(url: string, params: any) {
+    const endpoint = `${this.apiUrl}/v1/crawl`;
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Auth-Token": this.apiKey,
+        },
+        body: JSON.stringify({ url, ...params }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { success: true, ...data };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async checkCrawlStatus(jobId: string) {
+    const endpoint = `${this.apiUrl}/v1/crawl/${jobId}`;
+    try {
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Auth-Token": this.apiKey,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, status: "error", error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { success: true, ...data };
+    } catch (error: any) {
+      return { success: false, status: "error", error: error.message };
+    }
+  }
+}
+
+export const getFirecrawlClient = async (ctx: any, userId: string): Promise<any> => {
   // First try to get user's API key from internal query
-  const userKeyData = await ctx.runQuery(internal.firecrawlKeys.getDecryptedFirecrawlKey, { userId });
-  
+  const userKeyData: any = await ctx.runQuery(internal.firecrawlKeys.getDecryptedFirecrawlKey, { userId });
+  const apiUrl = process.env.FIRECRAWL_API_URL;
+
   if (userKeyData && userKeyData.key) {
     // Using user's Firecrawl API key
     // Update last used timestamp
     await ctx.runMutation(internal.firecrawlKeys.updateLastUsed, { keyId: userKeyData.keyId });
+
+    if (apiUrl) {
+      return new CustomFirecrawlApp({ apiKey: userKeyData.key, apiUrl });
+    }
     return new FirecrawlApp({ apiKey: userKeyData.key });
   }
-  
+
   // Fallback to environment variable if user hasn't set their own key
   const apiKey = process.env.FIRECRAWL_API_KEY;
   if (!apiKey) {
     console.error("No Firecrawl API key found in environment or user settings");
     throw new Error("No Firecrawl API key found. Please add your API key in settings.");
   }
+
   // Using environment Firecrawl API key
+  if (apiUrl) {
+    return new CustomFirecrawlApp({ apiKey, apiUrl });
+  }
   return new FirecrawlApp({ apiKey });
 };
 
@@ -34,7 +127,7 @@ export const scrapeUrl = internalAction({
     url: v.string(),
     userId: v.id("users"),
   },
-  handler: async (ctx, args): Promise<{
+  handler: async (ctx: any, args: any): Promise<{
     success: boolean;
     scrapeResultId: Id<"scrapeResults">;
     changeStatus: string | undefined;
@@ -58,12 +151,12 @@ export const scrapeUrl = internalAction({
       }
 
       // Log only essential info, not the full response
-      
+
       // Firecrawl returns markdown directly on the result object
       const markdown = result?.markdown || "";
       const changeTracking = result?.changeTracking;
       const metadata = result?.metadata;
-      
+
       // Log only essential change status
       if (changeTracking?.changeStatus === "changed") {
         console.log(`Change detected for ${args.url}: ${changeTracking.changeStatus}`);
@@ -93,10 +186,10 @@ export const scrapeUrl = internalAction({
 
       // If content changed, create an alert and send notifications
       if (changeTracking?.changeStatus === "changed" || changeTracking?.diff) {
-        const diffPreview = changeTracking?.diff?.text ? 
+        const diffPreview = changeTracking?.diff?.text ?
           changeTracking.diff.text.substring(0, 200) + (changeTracking.diff.text.length > 200 ? "..." : "") :
           "Website content has changed since last check";
-          
+
         await ctx.runMutation(internal.websites.createChangeAlert, {
           websiteId: args.websiteId,
           userId: args.userId,
@@ -154,7 +247,7 @@ export const scrapeUrl = internalAction({
               const emailConfig = await ctx.runQuery(internal.emailManager.getEmailConfigInternal, {
                 userId: args.userId,
               });
-              
+
               if (emailConfig?.email && emailConfig.isVerified) {
                 await ctx.scheduler.runAfter(0, internal.notifications.sendEmailNotification, {
                   email: emailConfig.email,
@@ -188,12 +281,38 @@ export const scrapeUrl = internalAction({
   },
 });
 
+// Scrape a URL just for analysis (no side effects in DB)
+export const scrapeUrlForAnalysis = internalAction({
+  args: {
+    url: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx: any, args: any) => {
+    const firecrawl = await getFirecrawlClient(ctx, args.userId);
+    try {
+      const result = await firecrawl.scrapeUrl(args.url, {
+        formats: ["markdown"],
+      }) as any;
+
+      if (!result.success) {
+        console.error(`Failed to scrape ${args.url}: ${result.error}`);
+        return null;
+      }
+
+      return result.markdown;
+    } catch (error) {
+      console.error(`Error scraping ${args.url}:`, error);
+      return null;
+    }
+  },
+});
+
 // Public action to initiate a manual scrape
 export const triggerScrape = action({
   args: {
     websiteId: v.id("websites"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
     const userId = await requireCurrentUserForAction(ctx);
 
     // Get website details
@@ -243,7 +362,7 @@ export const crawlWebsite = action({
     url: v.string(),
     limit: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
     const userId = await requireCurrentUserForAction(ctx);
 
     const firecrawl = await getFirecrawlClient(ctx, userId);
@@ -273,6 +392,32 @@ export const crawlWebsite = action({
     } catch (error) {
       console.error("Firecrawl crawl error:", error);
       throw error;
+    }
+  },
+});
+
+// Scrape a URL to get all links (for fallback link discovery)
+export const scrapePageLinks = internalAction({
+  args: {
+    url: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx: any, args: any): Promise<any> => {
+    const firecrawl = await getFirecrawlClient(ctx, args.userId);
+
+    try {
+      const response: any = await firecrawl.scrapeUrl(args.url, {
+        formats: ["links"],
+      });
+
+      if (!response.success) {
+        throw new Error(`Firecrawl link scrape failed: ${response.error}`);
+      }
+
+      return response.links || [];
+    } catch (error) {
+      console.error("Error scraping links:", error);
+      return [];
     }
   },
 });

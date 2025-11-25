@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useState, useEffect, Suspense } from 'react'
 import { Layout, MainContent, Footer } from '@/components/layout/layout'
 import { Header } from '@/components/layout/header'
@@ -22,7 +23,7 @@ import { APP_CONFIG, getFromEmail } from '@/config/app.config'
 // Dynamic import to avoid SSR issues with TipTap
 const EmailTemplateEditor = dynamic(
   () => import('@/components/EmailTemplateEditor').then(mod => mod.EmailTemplateEditor),
-  { 
+  {
     ssr: false,
     loading: () => <div className="h-64 bg-gray-50 rounded-lg animate-pulse" />
   }
@@ -33,19 +34,19 @@ function SettingsContent() {
   const searchParams = useSearchParams()
   const { isLoading: authLoading, isAuthenticated } = useConvexAuth()
   const { } = useAuthActions()
-  
+
   const [activeSection, setActiveSection] = useState<'email' | 'webhooks' | 'firecrawl' | 'api' | 'ai'>('email')
-  
+
   // API Key state
   const [showNewApiKey, setShowNewApiKey] = useState(false)
   const [newApiKeyName, setNewApiKeyName] = useState('')
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null)
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null)
-  
+
   // Webhook playground state
   const [copiedWebhook, setCopiedWebhook] = useState(false)
   const [expandedPayload, setExpandedPayload] = useState<string | null>(null)
-  
+
   // Notification settings state
   const [notificationEmail, setNotificationEmail] = useState('')
   const [defaultWebhook, setDefaultWebhook] = useState('')
@@ -60,7 +61,7 @@ function SettingsContent() {
   const [showHtmlSource, setShowHtmlSource] = useState(true)
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false)
   const [testEmailResult, setTestEmailResult] = useState<{ success: boolean; message: string } | null>(null)
-  
+
   // AI settings state
   const [aiEnabled, setAiEnabled] = useState(false)
   const [aiModel, setAiModel] = useState('gpt-4o-mini') // Default to OpenAI's gpt-4o-mini
@@ -68,22 +69,23 @@ function SettingsContent() {
   const [aiSystemPrompt, setAiSystemPrompt] = useState('')
   const [aiThreshold, setAiThreshold] = useState(70)
   const [aiApiKey, setAiApiKey] = useState('')
+  const [goNoGoRules, setGoNoGoRules] = useState('')
   const [emailOnlyIfMeaningful, setEmailOnlyIfMeaningful] = useState(false)
   const [webhookOnlyIfMeaningful, setWebhookOnlyIfMeaningful] = useState(false)
   const [isUpdatingAI, setIsUpdatingAI] = useState(false)
   const [aiSuccess, setAiSuccess] = useState(false)
   const [isTestingAI, setIsTestingAI] = useState(false)
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null)
-  
+
   // API Key queries and mutations
   const apiKeys = useQuery(api.apiKeys.getUserApiKeys)
   const createApiKey = useMutation(api.apiKeys.createApiKey)
   const deleteApiKey = useMutation(api.apiKeys.deleteApiKey)
-  
+
   // Webhook playground queries and mutations
   const webhookPayloads = useQuery(api.webhookPlayground.getWebhookPayloads, { limit: 50 })
   const clearPayloads = useMutation(api.webhookPlayground.clearWebhookPayloads)
-  
+
   // User settings queries and mutations
   const userSettings = useQuery(api.userSettings.getUserSettings)
   const emailConfig = useQuery(api.emailManager.getEmailConfig)
@@ -95,10 +97,10 @@ function SettingsContent() {
   const updateNotificationFiltering = useMutation(api.userSettings.updateNotificationFiltering)
   const testAIModel = useAction(api.testActions.testAIModel)
   const testEmailSending = useAction(api.testActions.testEmailSending)
-  
+
   // Query currentUser - it will return null if not authenticated
   // const currentUser = useQuery(api.users.getCurrentUser)
-  
+
   // Handle query parameter navigation
   useEffect(() => {
     const section = searchParams.get('section')
@@ -107,13 +109,13 @@ function SettingsContent() {
     } else if (section === 'email') {
       setActiveSection('email')
     }
-    
+
     // Handle verification success
     if (searchParams.get('verified') === 'true') {
       setEmailSuccess(true)
       setTimeout(() => setEmailSuccess(false), 5000)
     }
-    
+
     // Handle verification errors
     const error = searchParams.get('error')
     if (error) {
@@ -139,7 +141,7 @@ function SettingsContent() {
       setTimeout(() => setEmailError(null), 10000)
     }
   }, [searchParams])
-  
+
   // Populate form fields with existing data
   useEffect(() => {
     if (userSettings?.defaultWebhookUrl) {
@@ -162,54 +164,62 @@ function SettingsContent() {
       `.trim()
       setEmailTemplate(defaultTemplate)
     }
-    
+
     // Populate AI settings
     if (userSettings) {
       setAiEnabled(userSettings.aiAnalysisEnabled || false)
       setAiModel(userSettings.aiModel || 'gpt-4o-mini')
       setAiBaseUrl(userSettings.aiBaseUrl || '')
-      
+
       // Set system prompt with default if not provided
-      const defaultSystemPrompt = `You are an AI assistant specialized in analyzing website changes. Your task is to determine if a detected change is "meaningful" or just noise.
+      const defaultSystemPrompt = `You are an AI assistant specialized in analyzing website changes for a tender monitoring system. Your task is to determine if a detected change indicates a NEW tender, call for proposals, or call for expressions of interest.
 
 Meaningful changes include:
-- Content updates (text, images, prices)
-- New features or sections
-- Important announcements
-- Product availability changes
-- Policy updates
+- New "Appel d'offre" (Tender)
+- New "Appel à manifestation d'intérêt" (Call for Expression of Interest)
+- New "Avis de consultation"
+- New funding opportunities or grants
+- Updates to existing tender deadlines or requirements
 
 NOT meaningful (ignore these):
-- Rotating banners/carousels
-- Dynamic timestamps
-- View counters
-- Session IDs
-- Random promotional codes
-- Cookie consent banners
-- Advertising content
-- Social media feed updates
+- Minor text corrections
+- Date updates not related to deadlines
+- Layout changes
+- Menu updates
+- Footer/Header changes
+- General news not related to tenders
+
+IMPORTANT: If you detect a new tender/opportunity, identify the MOST RELEVANT link for detailed information.
+- Look for Markdown links like [Title](https://...) or raw URLs
+- Ignore image links (jpg, png, svg, etc.)
+- Ignore CSS/JS file links
+- Ignore generic navigation links
+- Look for links to detail pages, PDF documents, or dedicated tender pages
+- If the link is relative (e.g. /tender/123), try to return it as is or reconstruct the full URL if obvious
 
 Analyze the provided diff and return a JSON response with:
 {
-  "score": 0-100 (how meaningful the change is),
+  "score": 0-100 (how likely this is a new tender/opportunity),
   "isMeaningful": true/false,
-  "reasoning": "Brief explanation of your decision"
+  "reasoning": "Brief explanation of your decision",
+  "relevantLink": "URL of the most relevant page for this opportunity, or null if none found"
 }`;
-      
+
       setAiSystemPrompt(userSettings.aiSystemPrompt || defaultSystemPrompt)
       setAiThreshold(userSettings.aiMeaningfulChangeThreshold || 70)
       setAiApiKey(userSettings.aiApiKey || '')
+      setGoNoGoRules(userSettings.goNoGoRules || '')
       setEmailOnlyIfMeaningful(userSettings.emailOnlyIfMeaningful || false)
       setWebhookOnlyIfMeaningful(userSettings.webhookOnlyIfMeaningful || false)
     }
   }, [userSettings])
-  
+
   useEffect(() => {
     if (emailConfig?.email) {
       setNotificationEmail(emailConfig.email)
     }
   }, [emailConfig])
-  
+
   // Show loading while auth is loading
   if (authLoading) {
     return (
@@ -236,10 +246,10 @@ Analyze the provided diff and return a JSON response with:
     return null
   }
 
-  
+
   const handleCreateApiKey = async () => {
     if (!newApiKeyName.trim()) return
-    
+
     try {
       const result = await createApiKey({ name: newApiKeyName })
       setCreatedApiKey(result.key)
@@ -249,27 +259,27 @@ Analyze the provided diff and return a JSON response with:
       console.error('Failed to create API key:', error)
     }
   }
-  
+
   const handleCopyApiKey = (key: string, keyId: string) => {
     navigator.clipboard.writeText(key)
     setCopiedKeyId(keyId)
     setTimeout(() => setCopiedKeyId(null), 2000)
   }
-  
+
   const handleDeleteApiKey = async (keyId: string) => {
     if (!confirm('Are you sure you want to delete this API key? This action cannot be undone.')) return
-    
+
     try {
       await deleteApiKey({ keyId: keyId as Id<"apiKeys"> })
     } catch (error) {
       console.error('Failed to delete API key:', error)
     }
   }
-  
+
   return (
     <Layout>
       <Header />
-      
+
       <MainContent maxWidth="7xl" className="py-12">
         <div>
           <div className="flex items-center gap-4 mb-8">
@@ -278,75 +288,70 @@ Analyze the provided diff and return a JSON response with:
             </Link>
             <h1 className="text-3xl font-bold">Settings</h1>
           </div>
-          
+
           <div className="flex gap-8">
             {/* Sidebar */}
             <div className="w-64 flex-shrink-0">
               <nav className="space-y-1">
                 <button
                   onClick={() => setActiveSection('email')}
-                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeSection === 'email'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === 'email'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                 >
                   <Mail className="h-4 w-4" />
                   Email Notifications
                 </button>
                 <button
                   onClick={() => setActiveSection('webhooks')}
-                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeSection === 'webhooks'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === 'webhooks'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                 >
                   <Webhook className="h-4 w-4" />
                   Webhooks
                 </button>
                 <button
                   onClick={() => setActiveSection('firecrawl')}
-                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeSection === 'firecrawl'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === 'firecrawl'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                 >
                   <Key className="h-4 w-4" />
                   Firecrawl Auth
                 </button>
                 <button
                   onClick={() => setActiveSection('api')}
-                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeSection === 'api'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === 'api'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                 >
                   <Key className="h-4 w-4" />
                   Observer API Keys
                 </button>
                 <button
                   onClick={() => setActiveSection('ai')}
-                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeSection === 'ai'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === 'ai'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'text-gray-700 hover:bg-gray-100'
+                    }`}
                 >
                   <Bot className="h-4 w-4" />
                   AI Analysis
                 </button>
               </nav>
             </div>
-            
+
             {/* Content */}
             <div className="flex-1">
               {activeSection === 'email' && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-6">Email Notifications</h2>
-                  
+
                   {/* Error message */}
                   {emailError && (
                     <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -356,7 +361,7 @@ Analyze the provided diff and return a JSON response with:
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="space-y-8">
                     {/* Email Configuration */}
                     <div>
@@ -364,7 +369,7 @@ Analyze the provided diff and return a JSON response with:
                         <Mail className="h-5 w-5" />
                         Email Notifications
                       </h3>
-                      
+
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="notification-email">Notification Email</Label>
@@ -374,11 +379,11 @@ Analyze the provided diff and return a JSON response with:
                               type="email"
                               placeholder={APP_CONFIG.email.defaultRecipient}
                               value={notificationEmail}
-                              onChange={(e) => setNotificationEmail(e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotificationEmail(e.target.value)}
                               className="flex-1"
                             />
-                            <Button 
-                              variant="orange" 
+                            <Button
+                              variant="orange"
                               size="sm"
                               disabled={isUpdatingEmail || !notificationEmail || notificationEmail === emailConfig?.email}
                               onClick={async () => {
@@ -407,14 +412,13 @@ Analyze the provided diff and return a JSON response with:
                             We&apos;ll send change notifications to this email address
                           </p>
                         </div>
-                        
+
                         {/* Email verification status */}
                         {emailConfig && (
-                          <div className={`flex items-center justify-between p-3 rounded-lg ${
-                            emailConfig.isVerified 
-                              ? 'bg-green-50 border border-green-200' 
-                              : 'bg-amber-50 border border-amber-200'
-                          }`}>
+                          <div className={`flex items-center justify-between p-3 rounded-lg ${emailConfig.isVerified
+                            ? 'bg-green-50 border border-green-200'
+                            : 'bg-amber-50 border border-amber-200'
+                            }`}>
                             <div className="flex items-center gap-2">
                               {emailConfig.isVerified ? (
                                 <>
@@ -484,18 +488,17 @@ Analyze the provided diff and return a JSON response with:
                             </div>
                           </div>
                         )}
-                        
+
                         {/* Test email result */}
                         {testEmailResult && (
-                          <div className={`p-3 rounded-lg text-sm ${
-                            testEmailResult.success 
-                              ? 'bg-green-50 text-green-700 border border-green-200' 
-                              : 'bg-red-50 text-red-700 border border-red-200'
-                          }`}>
+                          <div className={`p-3 rounded-lg text-sm ${testEmailResult.success
+                            ? 'bg-green-50 text-green-700 border border-green-200'
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                            }`}>
                             {testEmailResult.success ? '✅' : '❌'} {testEmailResult.message}
                           </div>
                         )}
-                        
+
                         {/* Email template preview */}
                         <div>
                           <h4 className="font-medium mb-2">Email Preview</h4>
@@ -520,14 +523,14 @@ Analyze the provided diff and return a JSON response with:
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Email Template Editor */}
                     <div className="border-t pt-6">
                       <h4 className="font-medium mb-3">Email Template</h4>
                       <p className="text-sm text-gray-600 mb-4">
                         Customize the email template that will be sent when changes are detected. Use variables to insert dynamic content.
                       </p>
-                      
+
                       {/* Available Variables */}
                       <div className="mb-4 p-3 border rounded-lg">
                         <h5 className="font-medium mb-2">Available Variables</h5>
@@ -576,7 +579,7 @@ Analyze the provided diff and return a JSON response with:
                           </p>
                         )}
                       </div>
-                      
+
                       {/* Toggle between editor and HTML view */}
                       <div className="mb-4 flex gap-2">
                         <Button
@@ -594,12 +597,12 @@ Analyze the provided diff and return a JSON response with:
                           HTML Source
                         </Button>
                       </div>
-                      
+
                       {showHtmlSource ? (
                         <div className="border rounded-lg">
                           <textarea
                             value={emailTemplate}
-                            onChange={(e) => setEmailTemplate(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEmailTemplate(e.target.value)}
                             className="w-full p-4 font-mono text-sm min-h-[300px] rounded-lg"
                             placeholder="Enter your HTML template here..."
                             disabled={isUpdatingTemplate}
@@ -612,7 +615,7 @@ Analyze the provided diff and return a JSON response with:
                           disabled={isUpdatingTemplate}
                         />
                       )}
-                      
+
                       {/* Email Preview */}
                       <div className="mt-6">
                         <h4 className="font-medium mb-3">Preview</h4>
@@ -623,9 +626,9 @@ Analyze the provided diff and return a JSON response with:
                               <p><strong>To:</strong> {notificationEmail || APP_CONFIG.email.defaultRecipient}</p>
                               <p><strong>Subject:</strong> Changes detected on Example Website</p>
                             </div>
-                            <div 
+                            <div
                               className="prose prose-sm max-w-none"
-                              dangerouslySetInnerHTML={{ 
+                              dangerouslySetInnerHTML={{
                                 __html: emailTemplate
                                   .replace(/{{websiteName}}/g, 'Example Website')
                                   .replace(/{{websiteUrl}}/g, 'https://example.com')
@@ -643,7 +646,7 @@ Analyze the provided diff and return a JSON response with:
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="mt-4 flex items-center justify-between">
                         <Button
                           variant="outline"
@@ -677,7 +680,7 @@ Analyze the provided diff and return a JSON response with:
                               alert('Template validation failed:\n\n' + validation.errors.join('\n'))
                               return
                             }
-                            
+
                             setIsUpdatingTemplate(true)
                             try {
                               await updateEmailTemplate({ template: emailTemplate })
@@ -705,7 +708,7 @@ Analyze the provided diff and return a JSON response with:
                         </Button>
                       </div>
                     </div>
-                    
+
                     {/* Global email preferences */}
                     <div className="border-t pt-6">
                       <h4 className="font-medium mb-3">Email Preferences</h4>
@@ -719,16 +722,16 @@ Analyze the provided diff and return a JSON response with:
                   </div>
                 </div>
               )}
-              
+
               {activeSection === 'webhooks' && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-6">Webhooks</h2>
-                  
+
                   <div className="space-y-8">
                     {/* Default Webhook Configuration */}
                     <div>
                       <h3 className="text-lg font-medium mb-4">Default Webhook URL</h3>
-                      
+
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="default-webhook">Default Webhook URL (Optional)</Label>
@@ -738,18 +741,18 @@ Analyze the provided diff and return a JSON response with:
                               type="url"
                               placeholder="https://your-webhook.com/endpoint"
                               value={defaultWebhook}
-                              onChange={(e) => setDefaultWebhook(e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDefaultWebhook(e.target.value)}
                               className="flex-1"
                             />
-                            <Button 
-                              variant="orange" 
+                            <Button
+                              variant="orange"
                               size="sm"
                               disabled={isUpdatingWebhook || defaultWebhook === (userSettings?.defaultWebhookUrl || '')}
                               onClick={async () => {
                                 setIsUpdatingWebhook(true)
                                 try {
-                                  await updateDefaultWebhook({ 
-                                    webhookUrl: defaultWebhook || undefined 
+                                  await updateDefaultWebhook({
+                                    webhookUrl: defaultWebhook || undefined
                                   })
                                   setWebhookSuccess(true)
                                   setTimeout(() => setWebhookSuccess(false), 3000)
@@ -775,14 +778,14 @@ Analyze the provided diff and return a JSON response with:
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Webhook Playground */}
                     <div className="border-t pt-8">
                       <h3 className="text-lg font-medium mb-4 flex items-center gap-2 text-black">
                         <Webhook className="h-5 w-5 text-orange-500" />
                         Webhook Playground
                       </h3>
-                      
+
                       <div className="space-y-6">
                         {/* Webhook URL Section */}
                         <div>
@@ -803,7 +806,7 @@ Analyze the provided diff and return a JSON response with:
                               </div>
                             </div>
                           </div>
-                          
+
                           {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
                             <div className="mb-4 p-4 border border-orange-200 rounded-lg">
                               <div className="flex items-start gap-3">
@@ -822,7 +825,7 @@ Analyze the provided diff and return a JSON response with:
                               </div>
                             </div>
                           )}
-                          
+
                           <div className="flex items-center gap-2">
                             <Input
                               value={typeof window !== 'undefined' ? `${window.location.origin}/api/test-webhook` : 'Loading...'}
@@ -855,7 +858,7 @@ Analyze the provided diff and return a JSON response with:
                             Use this URL in your website notification settings to test webhook deliveries
                           </p>
                         </div>
-                        
+
                         {/* Webhook Payloads List */}
                         <div className="border rounded-lg">
                           <div className="px-4 py-3 border-b flex items-center justify-between bg-gray-50">
@@ -898,8 +901,8 @@ Analyze the provided diff and return a JSON response with:
                           ) : (
                             <div className="divide-y max-h-96 overflow-y-auto">
                               {webhookPayloads.map((payload) => (
-                                <div 
-                                  key={payload._id} 
+                                <div
+                                  key={payload._id}
                                   className="p-4 hover:bg-gray-50 transition-all"
                                 >
                                   <div className="flex items-start justify-between">
@@ -926,7 +929,7 @@ Analyze the provided diff and return a JSON response with:
                                           </span>
                                         </div>
                                         {payload.payload?.website?.url && (
-                                          <a 
+                                          <a
                                             href={payload.payload.website.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
@@ -944,7 +947,7 @@ Analyze the provided diff and return a JSON response with:
                                           <div className="p-2">
                                             <pre className="whitespace-pre-wrap break-all">
                                               <code>
-                                                {expandedPayload === payload._id 
+                                                {expandedPayload === payload._id
                                                   ? JSON.stringify(payload.payload, null, 2)
                                                   : JSON.stringify(payload.payload).slice(0, 100) + '...'
                                                 }
@@ -977,48 +980,48 @@ Analyze the provided diff and return a JSON response with:
                   </div>
                 </div>
               )}
-              
+
               {activeSection === 'firecrawl' && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-6">Firecrawl Auth</h2>
-                  
+
                   <div className="space-y-6">
                     <div>
                       <p className="text-gray-600 mb-4">
                         Connect your Firecrawl API key to enable website monitoring. Firecrawl powers the web scraping and change detection functionality.
                       </p>
-                      
-                      <a 
-                        href="https://www.firecrawl.dev/app/api-keys" 
-                        target="_blank" 
+
+                      <a
+                        href="https://www.firecrawl.dev/app/api-keys"
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-orange-600 hover:text-orange-700 text-sm font-medium"
                       >
                         Get your Firecrawl API key →
                       </a>
                     </div>
-                    
+
                     <FirecrawlKeyManager />
                   </div>
                 </div>
               )}
-              
+
               {activeSection === 'api' && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-6">Observer API Keys</h2>
-                  
+
                   <div className="space-y-6">
                     <div>
                       <p className="text-gray-600 mb-4">
-                        API keys allow you to programmatically add websites to your monitoring list. 
+                        API keys allow you to programmatically add websites to your monitoring list.
                         Keep your API keys secure and do not share them publicly.
                       </p>
-                      
+
                       <Link href="/api-docs" className="text-orange-600 hover:text-orange-700 text-sm font-medium">
                         View API Documentation →
                       </Link>
                     </div>
-                    
+
                     {/* Created API key alert */}
                     {createdApiKey && (
                       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
@@ -1044,7 +1047,7 @@ Analyze the provided diff and return a JSON response with:
                         </div>
                       </div>
                     )}
-                    
+
                     {/* API Keys list */}
                     <div>
                       <div className="flex items-center justify-between mb-4">
@@ -1059,15 +1062,15 @@ Analyze the provided diff and return a JSON response with:
                           Create New Key
                         </Button>
                       </div>
-                      
+
                       {showNewApiKey && (
                         <div className="mb-4 p-4 border rounded-lg bg-gray-50">
                           <div className="flex gap-2">
                             <Input
                               placeholder="API key name (e.g., Production)"
                               value={newApiKeyName}
-                              onChange={(e) => setNewApiKeyName(e.target.value)}
-                              onKeyDown={(e) => e.key === 'Enter' && handleCreateApiKey()}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewApiKeyName(e.target.value)}
+                              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleCreateApiKey()}
                               className="flex-1"
                             />
                             <Button
@@ -1091,7 +1094,7 @@ Analyze the provided diff and return a JSON response with:
                           </div>
                         </div>
                       )}
-                      
+
                       {apiKeys && apiKeys.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {apiKeys.map((key) => (
@@ -1143,7 +1146,7 @@ Analyze the provided diff and return a JSON response with:
                           <p className="text-xs mt-1">Create your first API key to get started</p>
                         </div>
                       )}
-                      
+
                       {apiKeys && apiKeys.length >= 5 && (
                         <p className="text-xs text-gray-500 mt-2">
                           Maximum of 5 API keys allowed per account
@@ -1153,11 +1156,11 @@ Analyze the provided diff and return a JSON response with:
                   </div>
                 </div>
               )}
-              
+
               {activeSection === 'ai' && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-6">AI Analysis Settings</h2>
-                  
+
                   <div className="space-y-6">
                     {/* AI Enable Toggle */}
                     <div className="flex items-center justify-between">
@@ -1172,18 +1175,18 @@ Analyze the provided diff and return a JSON response with:
                           type="checkbox"
                           className="sr-only peer"
                           checked={aiEnabled}
-                          onChange={(e) => setAiEnabled(e.target.checked)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAiEnabled(e.target.checked)}
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                       </label>
                     </div>
-                    
+
                     {aiEnabled && (
                       <>
                         {/* LLM Configuration */}
                         <div className="border rounded-lg p-6 space-y-6">
                           <h4 className="font-medium text-lg">LLM Configuration</h4>
-                          
+
                           {/* API Key */}
                           <div>
                             <Label htmlFor="ai-api-key">API Key</Label>
@@ -1193,7 +1196,7 @@ Analyze the provided diff and return a JSON response with:
                                 type="password"
                                 placeholder="sk-... or your provider's API key"
                                 value={aiApiKey}
-                                onChange={(e) => setAiApiKey(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAiApiKey(e.target.value)}
                                 className="flex-1 font-mono"
                               />
                               <Button
@@ -1205,12 +1208,13 @@ Analyze the provided diff and return a JSON response with:
                                   try {
                                     // First save the settings
                                     await updateAISettings({
-                                      enabled: true,
+                                      enabled: aiEnabled,
                                       model: aiModel,
                                       baseUrl: aiBaseUrl,
                                       systemPrompt: aiSystemPrompt,
                                       threshold: aiThreshold,
                                       apiKey: aiApiKey,
+                                      goNoGoRules: goNoGoRules,
                                     })
                                     // Then test the connection
                                     const result = await testAIModel()
@@ -1240,16 +1244,15 @@ Analyze the provided diff and return a JSON response with:
                               Your API key from OpenAI or any compatible provider
                             </p>
                             {aiTestResult && (
-                              <div className={`mt-2 p-2 rounded text-sm ${
-                                aiTestResult.success 
-                                  ? 'bg-green-50 text-green-700 border border-green-200' 
-                                  : 'bg-red-50 text-red-700 border border-red-200'
-                              }`}>
+                              <div className={`mt-2 p-2 rounded text-sm ${aiTestResult.success
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
                                 {aiTestResult.success ? '✅' : '❌'} {aiTestResult.message}
                               </div>
                             )}
                           </div>
-                          
+
                           {/* Model */}
                           <div>
                             <Label htmlFor="ai-model">Model</Label>
@@ -1258,14 +1261,14 @@ Analyze the provided diff and return a JSON response with:
                               type="text"
                               placeholder="gpt-4o-mini"
                               value={aiModel}
-                              onChange={(e) => setAiModel(e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAiModel(e.target.value)}
                               className="mt-1 font-mono"
                             />
                             <p className="text-sm text-gray-500 mt-1">
                               Model identifier (e.g., gpt-4o-mini, claude-4-sonnet, etc.)
                             </p>
                           </div>
-                          
+
                           {/* Base URL */}
                           <div>
                             <Label htmlFor="ai-base-url">Base URL (Optional)</Label>
@@ -1274,14 +1277,14 @@ Analyze the provided diff and return a JSON response with:
                               type="url"
                               placeholder="https://api.openai.com/v1"
                               value={aiBaseUrl}
-                              onChange={(e) => setAiBaseUrl(e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAiBaseUrl(e.target.value)}
                               className="mt-1 font-mono"
                             />
                             <p className="text-sm text-gray-500 mt-1">
                               Custom endpoint for OpenAI-compatible APIs. Leave empty for OpenAI.
                             </p>
                           </div>
-                          
+
                           {/* Provider Examples */}
                           <div className="text-sm text-gray-600 space-y-1">
                             <p className="font-medium">Provider Examples:</p>
@@ -1294,7 +1297,7 @@ Analyze the provided diff and return a JSON response with:
                             </ul>
                           </div>
                         </div>
-                        
+
                         {/* System Prompt */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
@@ -1303,30 +1306,37 @@ Analyze the provided diff and return a JSON response with:
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                const defaultPrompt = `You are an AI assistant specialized in analyzing website changes. Your task is to determine if a detected change is "meaningful" or just noise.
+                                const defaultPrompt = `You are an AI assistant specialized in analyzing website changes for a tender monitoring system. Your task is to determine if a detected change indicates a NEW tender, call for proposals, or call for expressions of interest.
 
 Meaningful changes include:
-- Content updates (text, images, prices)
-- New features or sections
-- Important announcements
-- Product availability changes
-- Policy updates
+- New "Appel d'offre" (Tender)
+- New "Appel à manifestation d'intérêt" (Call for Expression of Interest)
+- New "Avis de consultation"
+- New funding opportunities or grants
+- Updates to existing tender deadlines or requirements
 
 NOT meaningful (ignore these):
-- Rotating banners/carousels
-- Dynamic timestamps
-- View counters
-- Session IDs
-- Random promotional codes
-- Cookie consent banners
-- Advertising content
-- Social media feed updates
+- Minor text corrections
+- Date updates not related to deadlines
+- Layout changes
+- Menu updates
+- Footer/Header changes
+- General news not related to tenders
+
+IMPORTANT: If you detect a new tender/opportunity, identify the MOST RELEVANT link for detailed information.
+- Look for Markdown links like [Title](https://...) or raw URLs
+- Ignore image links (jpg, png, svg, etc.)
+- Ignore CSS/JS file links
+- Ignore generic navigation links
+- Look for links to detail pages, PDF documents, or dedicated tender pages
+- If the link is relative (e.g. /tender/123), try to return it as is or reconstruct the full URL if obvious
 
 Analyze the provided diff and return a JSON response with:
 {
-  "score": 0-100 (how meaningful the change is),
+  "score": 0-100 (how likely this is a new tender/opportunity),
   "isMeaningful": true/false,
-  "reasoning": "Brief explanation of your decision"
+  "reasoning": "Brief explanation of your decision",
+  "relevantLink": "URL of the most relevant page for this opportunity, or null if none found"
 }`;
                                 setAiSystemPrompt(defaultPrompt)
                               }}
@@ -1337,7 +1347,7 @@ Analyze the provided diff and return a JSON response with:
                           <Textarea
                             id="ai-prompt"
                             value={aiSystemPrompt}
-                            onChange={(e) => setAiSystemPrompt(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAiSystemPrompt(e.target.value)}
                             rows={10}
                             className="mt-1 font-mono text-xs min-h-[240px]"
                             placeholder="Enter your custom system prompt..."
@@ -1346,7 +1356,7 @@ Analyze the provided diff and return a JSON response with:
                             Customize how the AI analyzes changes. The AI will receive the diff and should return JSON.
                           </p>
                         </div>
-                        
+
                         {/* Threshold Setting */}
                         <div>
                           <Label htmlFor="ai-threshold">Meaningful Change Threshold</Label>
@@ -1357,18 +1367,35 @@ Analyze the provided diff and return a JSON response with:
                               min="0"
                               max="100"
                               value={aiThreshold}
-                              onChange={(e) => setAiThreshold(parseInt(e.target.value))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAiThreshold(parseInt(e.target.value))}
                               className="flex-1 accent-orange-500"
                             />
                             <div className="w-16 text-center">
                               <span className="text-lg font-medium text-orange-600">{aiThreshold}%</span>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Changes with AI scores above this threshold will be marked as meaningful
+                          <p className="text-xs text-gray-500 mt-1">
+                            Minimum score (0-100) to consider a change meaningful
                           </p>
                         </div>
-                        
+
+                        {/* Go/No Go Rules */}
+                        <div>
+                          <Label htmlFor="go-no-go-rules">Go/No Go Rules (Deep Analysis)</Label>
+                          <div className="mt-1">
+                            <textarea
+                              id="go-no-go-rules"
+                              value={goNoGoRules}
+                              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setGoNoGoRules(e.target.value)}
+                              placeholder="Define your criteria for a 'GO' opportunity..."
+                              className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            These rules will be used to analyze linked pages found in the diff.
+                          </p>
+                        </div>
+
                         {/* Info Box */}
                         <div className="border rounded-lg p-4">
                           <div className="flex items-start gap-3">
@@ -1386,18 +1413,18 @@ Analyze the provided diff and return a JSON response with:
                         </div>
                       </>
                     )}
-                    
+
                     {/* AI-based Notification Filtering */}
                     {aiEnabled && (
                       <div className="border rounded-lg p-4">
                         <h3 className="font-medium mb-3 flex items-center gap-2">
                           <Mail className="h-4 w-4" />
-                          AI-Based Notification Filtering
+                          Notification Filtering
                         </h3>
                         <p className="text-sm text-gray-600 mb-4">
                           Only send notifications when AI determines changes are meaningful
                         </p>
-                        
+
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
@@ -1408,13 +1435,13 @@ Analyze the provided diff and return a JSON response with:
                               <input
                                 type="checkbox"
                                 checked={emailOnlyIfMeaningful}
-                                onChange={(e) => setEmailOnlyIfMeaningful(e.target.checked)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmailOnlyIfMeaningful(e.target.checked)}
                                 className="sr-only peer"
                               />
                               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                             </label>
                           </div>
-                          
+
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
                               <label className="text-sm font-medium">Webhook notifications only for meaningful changes</label>
@@ -1424,7 +1451,7 @@ Analyze the provided diff and return a JSON response with:
                               <input
                                 type="checkbox"
                                 checked={webhookOnlyIfMeaningful}
-                                onChange={(e) => setWebhookOnlyIfMeaningful(e.target.checked)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWebhookOnlyIfMeaningful(e.target.checked)}
                                 className="sr-only peer"
                               />
                               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
@@ -1433,7 +1460,7 @@ Analyze the provided diff and return a JSON response with:
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Save Button */}
                     <div className="flex justify-end">
                       <Button
@@ -1448,14 +1475,15 @@ Analyze the provided diff and return a JSON response with:
                               systemPrompt: aiEnabled ? aiSystemPrompt : undefined,
                               threshold: aiEnabled ? aiThreshold : undefined,
                               apiKey: aiEnabled ? aiApiKey : undefined,
+                              goNoGoRules: aiEnabled ? goNoGoRules : undefined,
                             })
-                            
+
                             // Also update notification filtering settings
                             await updateNotificationFiltering({
                               emailOnlyIfMeaningful,
                               webhookOnlyIfMeaningful,
                             })
-                            
+
                             setAiSuccess(true)
                             setTimeout(() => setAiSuccess(false), 3000)
                           } catch (error) {
@@ -1481,14 +1509,14 @@ Analyze the provided diff and return a JSON response with:
                   </div>
                 </div>
               )}
-              
+
             </div>
           </div>
         </div>
       </MainContent>
-      
+
       <Footer />
-    </Layout>
+    </Layout >
   )
 }
 
