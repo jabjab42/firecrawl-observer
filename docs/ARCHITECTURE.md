@@ -1,4 +1,4 @@
-# Firecrawl Observer Architecture
+# Kabuki Observer Architecture
 
 ## System Overview
 

@@ -1,6 +1,6 @@
 # Application Configuration
 
-This directory contains the centralized configuration for the Firecrawl Observer application.
+This directory contains the centralized configuration for the Kabuki Observer application.
 
 ## Configuration Files
 
@@ -28,7 +28,7 @@ For Convex functions, use environment variables:
 
 ```typescript
 // Set these environment variables in Convex:
-// APP_NAME="Firecrawl Observer"
+// APP_NAME="Kabuki Observer"
 // FROM_EMAIL="noreply@example.com"
 
 const fromEmail = `${process.env.APP_NAME} <${process.env.FROM_EMAIL}>`

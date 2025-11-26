@@ -42,7 +42,7 @@ export const sendWebhookNotification = internalAction({
         detectedAt: new Date(args.scrapedAt).toISOString(),
         changeType: args.changeType,
         changeStatus: args.changeStatus,
-        summary: args.diff?.text ? 
+        summary: args.diff?.text ?
           args.diff.text.substring(0, 200) + (args.diff.text.length > 200 ? "..." : "") :
           "Website content has changed",
         diff: args.diff ? {
@@ -71,20 +71,20 @@ export const sendWebhookNotification = internalAction({
 
     try {
       console.log(`Sending webhook to ${args.webhookUrl}`);
-      
+
       // Check if the webhook URL is localhost or a private network
-      const isLocalhost = args.webhookUrl.includes('localhost') || 
-                         args.webhookUrl.includes('127.0.0.1') ||
-                         args.webhookUrl.includes('0.0.0.0') ||
-                         args.webhookUrl.includes('192.168.') ||
-                         args.webhookUrl.includes('10.') ||
-                         args.webhookUrl.includes('172.');
+      const isLocalhost = args.webhookUrl.includes('localhost') ||
+        args.webhookUrl.includes('127.0.0.1') ||
+        args.webhookUrl.includes('0.0.0.0') ||
+        args.webhookUrl.includes('192.168.') ||
+        args.webhookUrl.includes('10.') ||
+        args.webhookUrl.includes('172.');
 
       if (isLocalhost) {
         // Use the webhook proxy for localhost/private network URLs
         const proxyUrl = `${process.env.CONVEX_SITE_URL}/api/webhook-proxy`;
         console.log(`Using webhook proxy for localhost URL: ${proxyUrl}`);
-        
+
         const response = await fetch(proxyUrl, {
           method: 'POST',
           headers: {
@@ -104,7 +104,7 @@ export const sendWebhookNotification = internalAction({
 
         const responseData = await response.json();
         console.log(`Webhook sent successfully via proxy:`, responseData);
-        
+
         return { success: responseData.success, status: responseData.status };
       } else {
         // Direct request for public URLs
@@ -112,7 +112,7 @@ export const sendWebhookNotification = internalAction({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'User-Agent': 'Firecrawl-Observer/1.0',
+            'User-Agent': 'Kabuki-Observer/1.0',
           },
           body: JSON.stringify(payload),
         });
@@ -124,7 +124,7 @@ export const sendWebhookNotification = internalAction({
 
         const responseData = await response.text();
         console.log(`Webhook sent successfully: ${responseData}`);
-        
+
         return { success: true, status: response.status };
       }
     } catch (error) {
@@ -163,7 +163,7 @@ export const sendEmailNotification = internalAction({
     });
 
     let htmlContent = '';
-    
+
     if (userSettings?.emailTemplate) {
       // Use custom template with variable replacements
       let processedTemplate = userSettings.emailTemplate
@@ -178,7 +178,7 @@ export const sendEmailNotification = internalAction({
         .replace(/{{aiReasoning}}/g, args.aiAnalysis?.reasoning || 'N/A')
         .replace(/{{aiModel}}/g, args.aiAnalysis?.model || 'N/A')
         .replace(/{{aiAnalyzedAt}}/g, args.aiAnalysis?.analyzedAt ? new Date(args.aiAnalysis.analyzedAt).toLocaleString() : 'N/A');
-      
+
       // Sanitize the HTML to prevent XSS
       htmlContent = sanitizeHtml(processedTemplate);
     } else {
@@ -205,7 +205,7 @@ export const sendEmailNotification = internalAction({
     }
 
     await resend.sendEmail(ctx, {
-      from: `${process.env.APP_NAME || 'Firecrawl Observer'} <${process.env.FROM_EMAIL || 'noreply@example.com'}>`,
+      from: `${process.env.APP_NAME || 'Kabuki Observer'} <${process.env.FROM_EMAIL || 'noreply@example.com'}>`,
       to: args.email,
       subject: `Changes detected on ${args.websiteName}`,
       html: htmlContent,
@@ -252,20 +252,20 @@ export const sendCrawlWebhook = internalAction({
 
     try {
       console.log(`Sending crawl webhook to ${args.webhookUrl}`);
-      
+
       // Check if the webhook URL is localhost or a private network
-      const isLocalhost = args.webhookUrl.includes('localhost') || 
-                         args.webhookUrl.includes('127.0.0.1') ||
-                         args.webhookUrl.includes('0.0.0.0') ||
-                         args.webhookUrl.includes('192.168.') ||
-                         args.webhookUrl.includes('10.') ||
-                         args.webhookUrl.includes('172.');
+      const isLocalhost = args.webhookUrl.includes('localhost') ||
+        args.webhookUrl.includes('127.0.0.1') ||
+        args.webhookUrl.includes('0.0.0.0') ||
+        args.webhookUrl.includes('192.168.') ||
+        args.webhookUrl.includes('10.') ||
+        args.webhookUrl.includes('172.');
 
       if (isLocalhost) {
         // Use the webhook proxy for localhost/private network URLs
         const proxyUrl = `${process.env.CONVEX_SITE_URL}/api/webhook-proxy`;
         console.log(`Using webhook proxy for localhost URL: ${proxyUrl}`);
-        
+
         const response = await fetch(proxyUrl, {
           method: 'POST',
           headers: {
@@ -285,7 +285,7 @@ export const sendCrawlWebhook = internalAction({
 
         const responseData = await response.json();
         console.log(`Crawl webhook sent successfully via proxy:`, responseData);
-        
+
         return { success: responseData.success, status: responseData.status };
       } else {
         // Direct request for public URLs
@@ -293,7 +293,7 @@ export const sendCrawlWebhook = internalAction({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'User-Agent': 'Firecrawl-Observer/1.0',
+            'User-Agent': 'Kabuki-Observer/1.0',
           },
           body: JSON.stringify(payload),
         });

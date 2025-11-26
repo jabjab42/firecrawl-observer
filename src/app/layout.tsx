@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Firecrawl Observer",
+  title: "Kabuki Observer",
   description: "Monitor websites with Firecrawl change tracking",
 };
 

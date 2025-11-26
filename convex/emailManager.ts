@@ -40,10 +40,10 @@ export const updateEmailConfig = mutation({
       .first();
 
     const now = Date.now();
-    
+
     // Generate verification token
-    const verificationToken = Math.random().toString(36).substring(2, 15) + 
-                             Math.random().toString(36).substring(2, 15);
+    const verificationToken = Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
     const verificationExpiry = now + 24 * 60 * 60 * 1000; // 24 hours
 
     if (existingConfig) {
@@ -101,14 +101,14 @@ export const sendVerificationEmail = internalAction({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: `${process.env.APP_NAME || 'Firecrawl Observer'} <${process.env.FROM_EMAIL || 'noreply@example.com'}>`,
+          from: `${process.env.APP_NAME || 'Kabuki Observer'} <${process.env.FROM_EMAIL || 'noreply@example.com'}>`,
           to: args.email,
-          subject: 'Verify your email for Firecrawl Observer',
+          subject: 'Verify your email for Kabuki Observer',
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #EA580C; margin-bottom: 24px;">Verify Your Email</h2>
               <p style="color: #374151; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
-                Thank you for setting up email notifications with Firecrawl Observer. 
+                Thank you for setting up email notifications with Kabuki Observer. 
                 Please click the button below to verify your email address:
               </p>
               <a href="${verificationUrl}" 
@@ -121,7 +121,7 @@ export const sendVerificationEmail = internalAction({
               </p>
               <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 32px 0;">
               <p style="color: #9CA3AF; font-size: 12px;">
-                Firecrawl Observer - Website Change Monitoring
+                Kabuki Observer - Website Change Monitoring
               </p>
             </div>
           `,
@@ -174,7 +174,7 @@ export const verifyEmail = mutation({
 export const resendVerificationEmail = action({
   handler: async (ctx) => {
     const user = await requireCurrentUserForAction(ctx);
-    
+
     const config = await ctx.runQuery(api.emailManager.getEmailConfig, {});
 
     if (!config) {
@@ -186,8 +186,8 @@ export const resendVerificationEmail = action({
     }
 
     // Generate new token
-    const verificationToken = Math.random().toString(36).substring(2, 15) + 
-                             Math.random().toString(36).substring(2, 15);
+    const verificationToken = Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
     const verificationExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
 
     await ctx.runMutation(api.emailManager.updateVerificationToken, {

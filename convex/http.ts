@@ -22,10 +22,10 @@ http.route({
     }
 
     const token = authHeader.substring(7);
-    
+
     // Validate API key and get user
     const user = await ctx.runMutation(internal.apiKeys.validateApiKeyAndGetUser, { apiKey: token });
-    
+
     if (!user) {
       return new Response(
         JSON.stringify({ error: "Invalid API key" }),
@@ -36,14 +36,14 @@ http.route({
     try {
       const body = await request.json();
       const isBatch = Array.isArray(body);
-      
+
       if (isBatch) {
         const results = [];
         const errors = [];
 
         for (let i = 0; i < body.length; i++) {
           const website = body[i];
-          
+
           if (!website.url) {
             errors.push({
               index: i,
@@ -217,7 +217,7 @@ http.route({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Firecrawl-Observer/1.0',
+          'User-Agent': 'Kabuki-Observer/1.0',
         },
         body: JSON.stringify(payload),
       });
@@ -231,7 +231,7 @@ http.route({
           statusText: response.statusText,
           response: responseText,
         }),
-        { 
+        {
           status: response.ok ? 200 : 500,
           headers: { "Content-Type": "application/json" }
         }
@@ -261,10 +261,10 @@ http.route({
     }
 
     const token = authHeader.substring(7);
-    
+
     // Validate API key and get user
     const user = await ctx.runMutation(internal.apiKeys.validateApiKeyAndGetUser, { apiKey: token });
-    
+
     if (!user) {
       return new Response(
         JSON.stringify({ error: "Invalid API key" }),
@@ -274,7 +274,7 @@ http.route({
 
     try {
       const body = await request.json();
-      
+
       if (!body.websiteId) {
         return new Response(
           JSON.stringify({ error: "Missing required field: websiteId" }),
@@ -283,7 +283,7 @@ http.route({
       }
 
       const isPaused = body.paused === true;
-      
+
       // Update the website pause status
       const result = await ctx.runMutation(internal.websites.pauseWebsiteFromApi, {
         userId: user._id,
@@ -332,10 +332,10 @@ http.route({
     }
 
     const token = authHeader.substring(7);
-    
+
     // Validate API key and get user
     const user = await ctx.runMutation(internal.apiKeys.validateApiKeyAndGetUser, { apiKey: token });
-    
+
     if (!user) {
       return new Response(
         JSON.stringify({ error: "Invalid API key" }),
@@ -345,7 +345,7 @@ http.route({
 
     try {
       const body = await request.json();
-      
+
       if (!body.websiteId) {
         return new Response(
           JSON.stringify({ error: "Missing required field: websiteId" }),

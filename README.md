@@ -1,7 +1,7 @@
-# Firecrawl Observer
+# Kabuki Observer
 
 <p align="center">
-  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExYm94OHU0a3MxM2d4Zm5zb2tseTF4bDdmZWZpcmFlaDYxMzZod3VmbCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/pBQeHEiQiR25n8rd9J/giphy.gif" alt="Firecrawl Observer Demo" width="100%" />
+  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExYm94OHU0a3MxM2d4Zm5zb2tseTF4bDdmZWZpcmFlaDYxMzZod3VmbCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/pBQeHEiQiR25n8rd9J/giphy.gif" alt="Kabuki Observer Demo" width="100%" />
 </p>
 
 A powerful website monitoring application that tracks changes on websites and sends intelligent notifications. Built with Next.js, Convex, and Firecrawl API.
@@ -28,8 +28,8 @@ A powerful website monitoring application that tracks changes on websites and se
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/mendableai/firecrawl-observer.git
-cd firecrawl-observer
+git clone https://github.com/mendableai/kabuki-observer.git
+cd kabuki-observer
 ```
 
 ### Step 2: Install Dependencies
@@ -255,6 +255,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-- [Report Issues](https://github.com/mendableai/firecrawl-observer/issues)
+- [Report Issues](https://github.com/mendableai/kabuki-observer/issues)
 - [Firecrawl Documentation](https://docs.firecrawl.dev)
 - [Convex Documentation](https://docs.convex.dev)

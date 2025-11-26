@@ -7,15 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { 
-  Monitor, 
-  Bell, 
-  Code, 
-  Key, 
-  Webhook, 
-  Clock, 
-  Shield, 
-  Download, 
+import {
+  Monitor,
+  Bell,
+  Code,
+  Key,
+  Webhook,
+  Clock,
+  Shield,
+  Download,
   Eye,
   AlertCircle,
   GitBranch,
@@ -29,25 +29,25 @@ export default function DocsPage() {
   return (
     <Layout>
       <Header showCTA={false} />
-      
-      <Hero 
+
+      <Hero
         title="Documentation"
-        subtitle="Complete guide to monitoring websites with Firecrawl Observer"
+        subtitle="Complete guide to monitoring websites with Kabuki Observer"
       />
-      
+
       <MainContent maxWidth="7xl" className="py-12">
         <div className="max-w-6xl mx-auto space-y-12">
-          
+
           {/* Overview */}
           <section>
             <h2 className="text-2xl font-bold mb-6">Overview</h2>
             <div className="prose prose-gray max-w-none">
               <p className="text-lg text-gray-600 mb-6">
-                Firecrawl Observer is a powerful website monitoring tool that helps you track changes on any website. 
-                Built with Next.js, Convex, and the Firecrawl API, it provides real-time monitoring with customizable 
+                Kabuki Observer is a powerful website monitoring tool that helps you track changes on any website.
+                Built with Next.js, Convex, and the Firecrawl API, it provides real-time monitoring with customizable
                 intervals, visual diff viewing, and multiple notification options.
               </p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                 <Card>
                   <CardHeader>
@@ -62,7 +62,7 @@ export default function DocsPage() {
                     </p>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -76,7 +76,7 @@ export default function DocsPage() {
                     </p>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export default function DocsPage() {
           {/* Getting Started */}
           <section>
             <h2 className="text-2xl font-bold mb-6">Getting Started</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -115,7 +115,7 @@ export default function DocsPage() {
                   </Link>
                 </Button>
               </div>
-              
+
               <div>
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <Monitor className="h-5 w-5" />
@@ -138,7 +138,7 @@ export default function DocsPage() {
           {/* Features */}
           <section>
             <h2 className="text-2xl font-bold mb-6">Features</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
@@ -159,7 +159,7 @@ export default function DocsPage() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export default function DocsPage() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -195,7 +195,7 @@ export default function DocsPage() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -213,7 +213,7 @@ export default function DocsPage() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -231,7 +231,7 @@ export default function DocsPage() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -257,7 +257,7 @@ export default function DocsPage() {
           {/* Configuration */}
           <section>
             <h2 className="text-2xl font-bold mb-6">Configuration</h2>
-            
+
             <div className="space-y-8">
               <div>
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -275,7 +275,7 @@ export default function DocsPage() {
                   </ul>
                 </div>
               </div>
-              
+
               <div>
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <Webhook className="h-5 w-5" />
@@ -312,14 +312,14 @@ export default function DocsPage() {
           {/* API Documentation */}
           <section>
             <h2 className="text-2xl font-bold mb-6">API Documentation</h2>
-            
+
             <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-6 mb-6">
               <div className="flex items-center gap-3 mb-4">
                 <Code className="h-6 w-6 text-orange-600" />
                 <h3 className="text-xl font-semibold">REST API</h3>
               </div>
               <p className="text-gray-600 mb-4">
-                Access the full REST API to programmatically manage your website monitoring. 
+                Access the full REST API to programmatically manage your website monitoring.
                 Create API keys, add websites, and retrieve monitoring data.
               </p>
               <div className="flex gap-3">
@@ -344,7 +344,7 @@ export default function DocsPage() {
           {/* Troubleshooting */}
           <section>
             <h2 className="text-2xl font-bold mb-6">Troubleshooting</h2>
-            
+
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -361,14 +361,14 @@ export default function DocsPage() {
                         Check that your Firecrawl API key is configured and valid. Also ensure the website URL is accessible.
                       </p>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-medium mb-2">Changes not detected</h4>
                       <p className="text-sm text-gray-600 mb-2">
                         Some websites use dynamic content that may not be captured. Try adjusting the monitor type or check interval.
                       </p>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-medium mb-2">Webhook not receiving notifications</h4>
                       <p className="text-sm text-gray-600 mb-2">
@@ -386,18 +386,18 @@ export default function DocsPage() {
           {/* Support */}
           <section>
             <h2 className="text-2xl font-bold mb-6">Support</h2>
-            
+
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="flex items-center gap-3 mb-4">
                 <BookOpen className="h-6 w-6 text-blue-600" />
                 <h3 className="text-xl font-semibold">Need Help?</h3>
               </div>
               <p className="text-gray-600 mb-4">
-                If you&apos;re having trouble with Firecrawl Observer, check out these resources:
+                If you&apos;re having trouble with Kabuki Observer, check out these resources:
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button variant="outline" asChild>
-                  <Link href="https://github.com/mendableai/firecrawl-observer" target="_blank">
+                  <Link href="https://github.com/mendableai/kabuki-observer" target="_blank">
                     GitHub Repository
                   </Link>
                 </Button>
@@ -416,7 +416,7 @@ export default function DocsPage() {
           </section>
         </div>
       </MainContent>
-      
+
       <Footer />
     </Layout>
   )

@@ -386,7 +386,7 @@ export default function HomePage() {
               <div className="text-center lg:text-left">
                 <h1 className="text-[3rem] lg:text-[4rem] font-semibold tracking-tight leading-none mb-6">
                   <span className="bg-gradient-to-tr from-red-600 to-yellow-500 bg-clip-text text-transparent block">
-                    Firecrawl
+                    Kabuki
                   </span>
                   <span className="text-black block">
                     Observer
@@ -522,7 +522,7 @@ export default function HomePage() {
   // Main authenticated view (when isAuthenticated = true)
   return (
     <Layout>
-      <Header ctaHref="https://github.com/new?template_name=firecrawl-observer&template_owner=your-org" />
+      <Header ctaHref="https://github.com/new?template_name=kabuki-observer&template_owner=your-org" />
 
       {/* Show banner if no Firecrawl API key is set */}
       {!firecrawlKey?.hasKey && <FirecrawlKeyBanner />}
@@ -531,7 +531,7 @@ export default function HomePage() {
         title={
           <div className="flex flex-col leading-none">
             <span className="bg-gradient-to-tr from-red-600 to-yellow-500 bg-clip-text text-transparent">
-              Firecrawl
+              Kabuki
             </span>
             <span className="text-black">
               Observer
@@ -716,12 +716,12 @@ export default function HomePage() {
                             <div
                               key={website._id}
                               className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${isProcessing
-                                  ? 'bg-orange-50'
-                                  : isDeleting
-                                    ? 'bg-red-50 opacity-50'
-                                    : selectedWebsiteId === website._id
-                                      ? 'bg-orange-50 border-l-4 border-orange-500'
-                                      : ''
+                                ? 'bg-orange-50'
+                                : isDeleting
+                                  ? 'bg-red-50 opacity-50'
+                                  : selectedWebsiteId === website._id
+                                    ? 'bg-orange-50 border-l-4 border-orange-500'
+                                    : ''
                                 }`}
                               onClick={() => {
                                 setSelectedWebsiteId(website._id)
@@ -754,16 +754,16 @@ export default function HomePage() {
                                       <div className="flex items-center gap-2 mb-1">
                                         <h4 className="text-base font-medium text-gray-900">{website.name}</h4>
                                         <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${website.monitorType === 'full_site'
-                                            ? 'bg-orange-100 text-orange-700'
-                                            : 'bg-gray-100 text-gray-700'
+                                          ? 'bg-orange-100 text-orange-700'
+                                          : 'bg-gray-100 text-gray-700'
                                           }`}>
                                           {website.monitorType === 'full_site' ? 'Full Site' : 'Single Page'}
                                         </span>
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${website.isPaused
-                                            ? 'bg-yellow-100 text-yellow-700'
-                                            : website.isActive
-                                              ? 'bg-green-100 text-green-700'
-                                              : 'bg-gray-100 text-gray-500'
+                                          ? 'bg-yellow-100 text-yellow-700'
+                                          : website.isActive
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-gray-100 text-gray-500'
                                           }`}>
                                           {website.isPaused ? 'Paused' : website.isActive ? 'Active' : 'Inactive'}
                                         </span>
@@ -1121,8 +1121,8 @@ export default function HomePage() {
                                     <div className="relative group">
                                       <Bot
                                         className={`h-5 w-5 cursor-help ${scrape.aiAnalysis.isMeaningfulChange
-                                            ? 'text-green-600'
-                                            : 'text-red-500'
+                                          ? 'text-green-600'
+                                          : 'text-red-500'
                                           }`}
                                       />
                                       <div className="absolute bottom-full right-0 mb-2 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 w-80">
@@ -1166,9 +1166,9 @@ export default function HomePage() {
                                   </div>
                                   <div className="w-20 flex justify-end">
                                     <span className={`text-xs px-2 py-1 rounded flex items-center gap-1 w-20 justify-center ${scrape.changeStatus === 'changed' ? 'bg-orange-100 text-orange-800' :
-                                        scrape.changeStatus === 'checking' ? 'bg-blue-100 text-blue-800' :
-                                          scrape.changeStatus === 'new' ? 'bg-gray-100 text-gray-800' :
-                                            'bg-gray-100 text-gray-800'
+                                      scrape.changeStatus === 'checking' ? 'bg-blue-100 text-blue-800' :
+                                        scrape.changeStatus === 'new' ? 'bg-gray-100 text-gray-800' :
+                                          'bg-gray-100 text-gray-800'
                                       }`}>
                                       {scrape.changeStatus === 'checking' && (
                                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -1341,16 +1341,16 @@ export default function HomePage() {
                                       <div className="flex items-center gap-2">
                                         <h4 className="text-lg font-medium text-gray-900">{website.name}</h4>
                                         <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${website.monitorType === 'full_site'
-                                            ? 'bg-orange-100 text-orange-700'
-                                            : 'bg-gray-100 text-gray-700'
+                                          ? 'bg-orange-100 text-orange-700'
+                                          : 'bg-gray-100 text-gray-700'
                                           }`}>
                                           {website.monitorType === 'full_site' ? 'Full Site' : 'Single Page'}
                                         </span>
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${website.isPaused
-                                            ? 'bg-yellow-100 text-yellow-700'
-                                            : website.isActive
-                                              ? 'bg-green-100 text-green-700'
-                                              : 'bg-gray-100 text-gray-500'
+                                          ? 'bg-yellow-100 text-yellow-700'
+                                          : website.isActive
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-gray-100 text-gray-500'
                                           }`}>
                                           {website.isPaused ? 'Paused' : website.isActive ? 'Active' : 'Inactive'}
                                         </span>
@@ -1620,8 +1620,8 @@ export default function HomePage() {
                                     <div className="relative group">
                                       <Bot
                                         className={`h-5 w-5 cursor-help ${scrape.aiAnalysis.isMeaningfulChange
-                                            ? 'text-green-600'
-                                            : 'text-red-500'
+                                          ? 'text-green-600'
+                                          : 'text-red-500'
                                           }`}
                                       />
                                       <div className="absolute bottom-full right-0 mb-2 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 w-80">
@@ -1665,9 +1665,9 @@ export default function HomePage() {
                                   </div>
                                   <div className="w-20 flex justify-end">
                                     <span className={`text-xs px-2 py-1 rounded flex items-center gap-1 w-20 justify-center ${scrape.changeStatus === 'changed' ? 'bg-orange-100 text-orange-800' :
-                                        scrape.changeStatus === 'checking' ? 'bg-blue-100 text-blue-800' :
-                                          scrape.changeStatus === 'new' ? 'bg-gray-100 text-gray-800' :
-                                            'bg-gray-100 text-gray-800'
+                                      scrape.changeStatus === 'checking' ? 'bg-blue-100 text-blue-800' :
+                                        scrape.changeStatus === 'new' ? 'bg-gray-100 text-gray-800' :
+                                          'bg-gray-100 text-gray-800'
                                       }`}>
                                       {scrape.changeStatus === 'checking' && (
                                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -1737,10 +1737,10 @@ export default function HomePage() {
                               <div
                                 key={index}
                                 className={`px-2 py-0.5 ${isAddition ? 'bg-green-900/30 text-green-400' :
-                                    isDeletion ? 'bg-red-900/30 text-red-400' :
-                                      isContext ? 'bg-gray-800/50 text-gray-300 font-bold' :
-                                        isFileHeader ? 'text-gray-400' :
-                                          'text-gray-200'
+                                  isDeletion ? 'bg-red-900/30 text-red-400' :
+                                    isContext ? 'bg-gray-800/50 text-gray-300 font-bold' :
+                                      isFileHeader ? 'text-gray-400' :
+                                        'text-gray-200'
                                   }`}
                               >
                                 <span className="select-none text-gray-500 mr-2">

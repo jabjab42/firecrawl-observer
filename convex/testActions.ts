@@ -16,21 +16,21 @@ export const testAIModel = action({
     baseUrl?: string;
   }> => {
     const user = await requireCurrentUserForAction(ctx);
-    
+
     // Get user settings
     const userSettings: any = await ctx.runQuery(api.userSettings.getUserSettings);
-    
+
     if (!userSettings?.aiApiKey) {
       throw new Error("No API key configured");
     }
-    
+
     if (!userSettings.aiAnalysisEnabled) {
       throw new Error("AI analysis is not enabled");
     }
-    
+
     const baseUrl = userSettings.aiBaseUrl || "https://api.openai.com/v1";
     const apiUrl = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
-    
+
     try {
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -55,15 +55,15 @@ export const testAIModel = action({
           response_format: { type: "json_object" },
         }),
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(`API error: ${response.status} - ${error}`);
       }
-      
+
       const data = await response.json();
       const result = JSON.parse(data.choices[0].message.content);
-      
+
       return {
         success: true,
         message: result.message || "Connection successful",
@@ -89,28 +89,28 @@ export const testEmailSending = action({
     message: string;
   }> => {
     const user = await requireCurrentUserForAction(ctx);
-    
+
     // Get user's email config
     const emailConfig: any = await ctx.runQuery(api.emailManager.getEmailConfig);
-    
+
     if (!emailConfig?.email) {
       throw new Error("No email configured");
     }
-    
+
     if (!emailConfig.isVerified) {
       throw new Error("Email is not verified");
     }
-    
+
     // Get user settings for template
     const userSettings = await ctx.runQuery(api.userSettings.getUserSettings);
-    
+
     // Schedule the test email
     await ctx.scheduler.runAfter(0, internal.testActions.sendTestEmailInternal, {
       email: emailConfig.email,
       userId: user,
       emailTemplate: userSettings?.emailTemplate || undefined,
     });
-    
+
     return {
       success: true,
       message: `Test email sent to ${emailConfig.email}`,
@@ -127,7 +127,7 @@ export const sendTestEmailInternal = internalAction({
   },
   handler: async (ctx, args) => {
     let htmlContent = '';
-    
+
     if (args.emailTemplate) {
       // Use custom template with test data
       let processedTemplate = args.emailTemplate
@@ -142,13 +142,13 @@ export const sendTestEmailInternal = internalAction({
         .replace(/{{aiReasoning}}/g, 'This is a test email to verify your email template is working correctly.')
         .replace(/{{aiModel}}/g, 'gpt-4o-mini')
         .replace(/{{aiAnalyzedAt}}/g, new Date().toLocaleString());
-      
+
       // Sanitize the HTML
       htmlContent = sanitizeHtml(processedTemplate);
     } else {
       // Use default test template
       htmlContent = `
-        <h2>Test Email - Firecrawl Observer</h2>
+        <h2>Test Email - Kabuki Observer</h2>
         <p>This is a test email to verify your email configuration is working correctly.</p>
         <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
           <h3>Test Configuration</h3>
@@ -159,11 +159,11 @@ export const sendTestEmailInternal = internalAction({
         <p>If you received this email, your email notifications are configured correctly.</p>
       `;
     }
-    
+
     await resend.sendEmail(ctx, {
-      from: `${process.env.APP_NAME || 'Firecrawl Observer'} <${process.env.FROM_EMAIL || 'noreply@example.com'}>`,
+      from: `${process.env.APP_NAME || 'Kabuki Observer'} <${process.env.FROM_EMAIL || 'noreply@example.com'}>`,
       to: args.email,
-      subject: "Test Email - Firecrawl Observer",
+      subject: "Test Email - Kabuki Observer",
       html: htmlContent,
     });
   },

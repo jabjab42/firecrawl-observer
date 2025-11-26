@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     })
 
     const data = await response.json()
-    
+
     return NextResponse.json(data, { status: response.status })
   } catch (error) {
     console.error('API error:', error)
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 // Also handle GET requests to show API info
 export async function GET() {
   return NextResponse.json({
-    message: 'Firecrawl Observer API',
+    message: 'Kabuki Observer API',
     endpoints: {
       'POST /api/websites': 'Add a new website to monitor',
       'POST /api/websites/pause': 'Pause or resume website monitoring',
