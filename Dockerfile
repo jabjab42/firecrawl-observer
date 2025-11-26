@@ -17,6 +17,7 @@ COPY . .
 # Set build-time environment variables
 ARG NEXT_PUBLIC_CONVEX_URL
 ENV NEXT_PUBLIC_CONVEX_URL=$NEXT_PUBLIC_CONVEX_URL
+ENV STANDALONE_OUTPUT=true
 
 RUN npm run build
 
