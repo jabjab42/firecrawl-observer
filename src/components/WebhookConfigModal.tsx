@@ -264,10 +264,10 @@ export function WebhookConfigModal({ isOpen, onClose, onSave, initialConfig, web
                       Enable Deep Analysis (Follow Links)
                     </Label>
                     <p className="text-sm text-gray-500 mt-1">
-                      When enabled, we'll automatically visit new links found on the page and analyze them using your "Go/No Go" rules.
+                      When enabled, we&apos;ll automatically visit new links found on the page and analyze them using your &quot;Go/No Go&quot; rules.
                     </p>
                     <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-xs rounded border border-blue-100">
-                      <strong>Note:</strong> This consumes more AI credits and Firecrawl scrapes. Make sure you have defined your "Go/No Go Rules" in Settings.
+                      <strong>Note:</strong> This consumes more AI credits and Firecrawl scrapes. Make sure you have defined your &quot;Go/No Go Rules&quot; in Settings.
                     </div>
                   </div>
                 </div>
