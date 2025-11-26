@@ -93,16 +93,32 @@ class CustomFirecrawlApp {
 export const getFirecrawlClient = async (ctx: any, userId: string): Promise<any> => {
   // First try to get user's API key from internal query
   const userKeyData: any = await ctx.runQuery(internal.firecrawlKeys.getDecryptedFirecrawlKey, { userId });
-  const apiUrl = process.env.FIRECRAWL_API_URL;
+  const envApiUrl = process.env.FIRECRAWL_API_URL;
 
   if (userKeyData && userKeyData.key) {
     // Using user's Firecrawl API key
     // Update last used timestamp
     await ctx.runMutation(internal.firecrawlKeys.updateLastUsed, { keyId: userKeyData.keyId });
 
-    if (apiUrl) {
-      return new CustomFirecrawlApp({ apiKey: userKeyData.key, apiUrl });
+    const instanceType = userKeyData.instanceType || "cloud";
+    const userApiUrl = userKeyData.apiUrl;
+
+    // Use user's self-hosted instance if configured
+    if (instanceType === "self-hosted" && userApiUrl) {
+      return new CustomFirecrawlApp({ apiKey: userKeyData.key, apiUrl: userApiUrl });
     }
+
+    // If user explicitly selected cloud, use cloud app (ignore envApiUrl)
+    if (instanceType === "cloud") {
+      return new FirecrawlApp({ apiKey: userKeyData.key });
+    }
+
+    // Use environment self-hosted instance if configured (fallback)
+    if (envApiUrl) {
+      return new CustomFirecrawlApp({ apiKey: userKeyData.key, apiUrl: envApiUrl });
+    }
+
+    // Default to cloud
     return new FirecrawlApp({ apiKey: userKeyData.key });
   }
 
@@ -114,8 +130,8 @@ export const getFirecrawlClient = async (ctx: any, userId: string): Promise<any>
   }
 
   // Using environment Firecrawl API key
-  if (apiUrl) {
-    return new CustomFirecrawlApp({ apiKey, apiUrl });
+  if (envApiUrl) {
+    return new CustomFirecrawlApp({ apiKey, apiUrl: envApiUrl });
   }
   return new FirecrawlApp({ apiKey });
 };

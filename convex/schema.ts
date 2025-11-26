@@ -20,6 +20,8 @@ const schema = defineSchema({
   firecrawlApiKeys: defineTable({
     userId: v.id("users"),
     encryptedKey: v.string(),
+    instanceType: v.optional(v.union(v.literal("cloud"), v.literal("self-hosted"))), // Default to "cloud" for existing keys
+    encryptedApiUrl: v.optional(v.string()), // For self-hosted instances
     lastUsed: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),

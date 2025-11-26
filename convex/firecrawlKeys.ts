@@ -34,6 +34,8 @@ export const getUserFirecrawlKey = query({
 
     return {
       hasKey: true,
+      instanceType: apiKey.instanceType || "cloud",
+      apiUrl: apiKey.encryptedApiUrl ? decryptKey(apiKey.encryptedApiUrl) : undefined,
       lastUsed: apiKey.lastUsed,
       createdAt: apiKey.createdAt,
       updatedAt: apiKey.updatedAt,
@@ -47,6 +49,8 @@ export const getUserFirecrawlKey = query({
 export const setFirecrawlKey = mutation({
   args: {
     apiKey: v.string(),
+    instanceType: v.optional(v.union(v.literal("cloud"), v.literal("self-hosted"))),
+    apiUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
@@ -56,10 +60,17 @@ export const setFirecrawlKey = mutation({
     if (!trimmedKey || trimmedKey.length < 20) {
       throw new Error("Invalid API key format");
     }
-    
-    // Firecrawl keys typically start with 'fc-'
-    if (!trimmedKey.startsWith('fc-')) {
-      throw new Error("Invalid Firecrawl API key format. Keys should start with 'fc-'");
+
+    const instanceType = args.instanceType || "cloud";
+
+    // Firecrawl cloud keys typically start with 'fc-', but self-hosted may use different formats
+    if (instanceType === "cloud" && !trimmedKey.startsWith('fc-')) {
+      throw new Error("Invalid Firecrawl API key format. Cloud keys should start with 'fc-'");
+    }
+
+    // Validate API URL for self-hosted instances
+    if (instanceType === "self-hosted" && !args.apiUrl) {
+      throw new Error("API URL is required for self-hosted instances");
     }
 
     // Check if user already has a key
@@ -69,14 +80,15 @@ export const setFirecrawlKey = mutation({
       .first();
 
     const encryptedKey = encryptKey(trimmedKey);
+    const encryptedApiUrl = args.apiUrl ? encryptKey(args.apiUrl) : undefined;
     const now = Date.now();
-    
+
     // Debug: verify encryption/decryption works
     const testDecrypt = decryptKey(encryptedKey);
     if (testDecrypt !== trimmedKey) {
-      console.error("Encryption/decryption mismatch:", { 
-        original: trimmedKey.slice(0, 8) + "...", 
-        decrypted: testDecrypt.slice(0, 8) + "..." 
+      console.error("Encryption/decryption mismatch:", {
+        original: trimmedKey.slice(0, 8) + "...",
+        decrypted: testDecrypt.slice(0, 8) + "..."
       });
       throw new Error("Failed to encrypt API key properly");
     }
@@ -85,6 +97,8 @@ export const setFirecrawlKey = mutation({
       // Update existing key
       await ctx.db.patch(existingKey._id, {
         encryptedKey,
+        instanceType,
+        encryptedApiUrl,
         updatedAt: now,
       });
     } else {
@@ -92,6 +106,8 @@ export const setFirecrawlKey = mutation({
       await ctx.db.insert("firecrawlApiKeys", {
         userId: user._id,
         encryptedKey,
+        instanceType,
+        encryptedApiUrl,
         createdAt: now,
         updatedAt: now,
       });
@@ -137,6 +153,8 @@ export const getDecryptedFirecrawlKey = internalQuery({
     return {
       key: decryptKey(apiKey.encryptedKey),
       keyId: apiKey._id,
+      instanceType: apiKey.instanceType || "cloud",
+      apiUrl: apiKey.encryptedApiUrl ? decryptKey(apiKey.encryptedApiUrl) : undefined,
     };
   },
 });
@@ -161,12 +179,12 @@ import { requireCurrentUserForAction } from "./helpers";
 export const getTokenUsage = action({
   handler: async (ctx): Promise<{ success: boolean; error?: string; remaining_tokens?: number }> => {
     const user = await requireCurrentUserForAction(ctx);
-    
+
     // Get user's API key
-    const keyData: any = await ctx.runQuery(internal.firecrawlKeys.getDecryptedFirecrawlKey, { 
-      userId: user 
+    const keyData: any = await ctx.runQuery(internal.firecrawlKeys.getDecryptedFirecrawlKey, {
+      userId: user
     });
-    
+
     if (!keyData || !keyData.key) {
       return {
         success: false,
