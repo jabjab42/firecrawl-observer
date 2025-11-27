@@ -196,109 +196,141 @@ Please analyze these changes and determine if they are meaningful.`,
           console.log(`[DEBUG] AI Response relevantLinks: ${JSON.stringify(targetUrls)}`);
 
           if (targetUrls.length > 0) {
-            console.log(`Performing deep analysis on ${targetUrls.length} AI-selected links.`);
-
-            // Process links in parallel (with a limit if needed, but 10-12 is fine for now)
-            const deepAnalysisResults = await Promise.all(targetUrls.map(async (targetUrl) => {
-              if (!targetUrl || !targetUrl.startsWith('http')) return null;
-
-              try {
-                // Scrape the target URL
-                const deepContent = await ctx.runAction(internal.firecrawl.scrapeUrlForAnalysis, {
-                  url: targetUrl,
-                  userId: args.userId,
-                });
-
-                if (!deepContent) {
-                  console.error(`[Deep Analysis] Failed to scrape content from ${targetUrl}`);
-                  return { url: targetUrl, error: "Failed to scrape" };
-                }
-
-                // Run Go/No Go Analysis
-                const systemInstruction = `You are an expert analyst.
-Evaluate the opportunity based STRICTLY on the provided rules.
-1. Assign a score from 0 to 100 based on how well it matches the criteria.
-2. Determine if it is a "GO" (score >= 50) or "NO GO" (score < 50).
-3. Provide a concise explanation for the score.
-
-Return JSON:
-{
-  "score": number, // 0-100
-  "isGo": boolean,
-  "reasoning": "Concise explanation based on the rules"
-}`;
-
-                const userContent = `User's Go/No Go Rules:
-"${userSettings.goNoGoRules}"
-
-Content of the linked page (${targetUrl}):
-${deepContent.substring(0, 15000)}`;
-
-                const deepResponse = await fetch(apiUrl, {
-                  method: "POST",
-                  headers: {
-                    "Authorization": `Bearer ${userSettings.aiApiKey}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    model: userSettings.aiModel || "gpt-4o-mini",
-                    messages: [
-                      { role: "system", content: systemInstruction },
-                      { role: "user", content: userContent }
-                    ],
-                    temperature: 0.1,
-                    response_format: { type: "json_object" },
-                  }),
-                });
-
-                if (deepResponse.ok) {
-                  const deepData = await deepResponse.json();
-                  const rawContent = deepData.choices[0].message.content;
-                  const deepResult = JSON.parse(rawContent);
-
-                  return {
-                    url: targetUrl,
-                    ...deepResult
-                  };
-                } else {
-                  return { url: targetUrl, error: "AI API error" };
-                }
-              } catch (e) {
-                console.error(`[Deep Analysis] Error analyzing ${targetUrl}:`, e);
-                return { url: targetUrl, error: "Exception during analysis" };
-              }
-            }));
-
-            // Filter out nulls and errors
-            const validResults = deepAnalysisResults.filter((r: any) => r && !r.error);
-
-            console.log(`====== GO/NO GO ANALYSIS RESULTS (${validResults.length}) ======`);
-
-            if (validResults.length > 0) {
-              // Aggregate results
-              const goResults = validResults.filter((r: any) => r.isGo);
-              const bestResult = validResults.reduce((prev: any, current: any) => (prev.score > current.score) ? prev : current, validResults[0]);
-
-              // Construct consolidated reasoning
-              let consolidatedReasoning = `Deep Analysis performed on ${validResults.length} links.\n\n`;
-
-              validResults.forEach((r: any) => {
-                const icon = r.isGo ? '✅' : '❌';
-                consolidatedReasoning += `${icon} [${r.score}/100] ${r.url}\n${r.reasoning}\n\n`;
+            // Deduplication: Check which URLs have already been analyzed
+            const newTargetUrls: string[] = [];
+            for (const url of targetUrls) {
+              const existingAnalysis = await ctx.runQuery(internal.websites.getAnalyzedOpportunity, {
+                url: url,
+                userId: args.userId,
               });
 
-              consolidatedReasoning += `Original Change: ${reasoning}`;
-
-              // OVERRIDE the main analysis
-              if (goResults.length > 0) {
-                isMeaningful = true;
-                reasoning = consolidatedReasoning;
-                // Use the score of the best result
-                aiResponse.score = bestResult.score;
+              // If analyzed in the last 30 days, skip it
+              const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+              if (existingAnalysis && existingAnalysis.analyzedAt > thirtyDaysAgo) {
+                console.log(`[Deep Analysis] Skipping duplicate URL (analyzed at ${new Date(existingAnalysis.analyzedAt).toISOString()}): ${url}`);
               } else {
-                isMeaningful = false; // Suppress notification if ALL are NO GO
-                reasoning = consolidatedReasoning;
-                aiResponse.score = bestResult.score;
+                newTargetUrls.push(url);
+              }
+            }
+
+            if (newTargetUrls.length === 0) {
+              console.log(`[Deep Analysis] All identified links have been analyzed recently. Skipping deep analysis.`);
+              isMeaningful = false; // Override to false if only duplicates found
+              reasoning += "\n\n(Note: New opportunities were detected but skipped because they were already analyzed recently.)";
+            } else {
+              console.log(`Performing deep analysis on ${newTargetUrls.length} new links (out of ${targetUrls.length} identified).`);
+
+              // Process links in parallel (with a limit if needed, but 10-12 is fine for now)
+              const deepAnalysisResults = await Promise.all(newTargetUrls.map(async (targetUrl) => {
+                if (!targetUrl || !targetUrl.startsWith('http')) return null;
+
+                try {
+                  // Scrape the target URL
+                  const deepContent = await ctx.runAction(internal.firecrawl.scrapeUrlForAnalysis, {
+                    url: targetUrl,
+                    userId: args.userId,
+                  });
+
+                  if (!deepContent) {
+                    console.error(`[Deep Analysis] Failed to scrape content from ${targetUrl}`);
+                    return { url: targetUrl, error: "Failed to scrape" };
+                  }
+
+                  // Run Go/No Go Analysis
+                  const systemInstruction = `You are an expert analyst.
+  Evaluate the opportunity based STRICTLY on the provided rules.
+  1. Assign a score from 0 to 100 based on how well it matches the criteria.
+  2. Determine if it is a "GO" (score >= 50) or "NO GO" (score < 50).
+  3. Provide a concise explanation for the score.
+  
+  Return JSON:
+  {
+    "score": number, // 0-100
+    "isGo": boolean,
+    "reasoning": "Concise explanation based on the rules"
+  }`;
+
+                  const userContent = `User's Go/No Go Rules:
+  "${userSettings.goNoGoRules}"
+  
+  Content of the linked page (${targetUrl}):
+  ${deepContent.substring(0, 15000)}`;
+
+                  const deepResponse = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: {
+                      "Authorization": `Bearer ${userSettings.aiApiKey}`,
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      model: userSettings.aiModel || "gpt-4o-mini",
+                      messages: [
+                        { role: "system", content: systemInstruction },
+                        { role: "user", content: userContent }
+                      ],
+                      temperature: 0.1,
+                      response_format: { type: "json_object" },
+                    }),
+                  });
+
+                  if (deepResponse.ok) {
+                    const deepData = await deepResponse.json();
+                    const rawContent = deepData.choices[0].message.content;
+                    const deepResult = JSON.parse(rawContent);
+
+                    // Store the analysis result to prevent future duplicates
+                    await ctx.runMutation(internal.websites.storeAnalyzedOpportunity, {
+                      url: targetUrl,
+                      userId: args.userId,
+                      websiteId: scrapeResult.websiteId,
+                      status: deepResult.isGo ? "meaningful" : "not_meaningful",
+                      score: deepResult.score,
+                    });
+
+                    return {
+                      url: targetUrl,
+                      ...deepResult
+                    };
+                  } else {
+                    return { url: targetUrl, error: "AI API error" };
+                  }
+                } catch (e) {
+                  console.error(`[Deep Analysis] Error analyzing ${targetUrl}:`, e);
+                  return { url: targetUrl, error: "Exception during analysis" };
+                }
+              }));
+
+              // Filter out nulls and errors
+              const validResults = deepAnalysisResults.filter((r: any) => r && !r.error);
+
+              console.log(`====== GO/NO GO ANALYSIS RESULTS (${validResults.length}) ======`);
+
+              if (validResults.length > 0) {
+                // Aggregate results
+                const goResults = validResults.filter((r: any) => r.isGo);
+                const bestResult = validResults.reduce((prev: any, current: any) => (prev.score > current.score) ? prev : current, validResults[0]);
+
+                // Construct consolidated reasoning
+                let consolidatedReasoning = `Deep Analysis performed on ${validResults.length} links.\n\n`;
+
+                validResults.forEach((r: any) => {
+                  const icon = r.isGo ? '✅' : '❌';
+                  consolidatedReasoning += `${icon} [${r.score}/100] ${r.url}\n${r.reasoning}\n\n`;
+                });
+
+                consolidatedReasoning += `Original Change: ${reasoning}`;
+
+                // OVERRIDE the main analysis
+                if (goResults.length > 0) {
+                  isMeaningful = true;
+                  reasoning = consolidatedReasoning;
+                  // Use the score of the best result
+                  aiResponse.score = bestResult.score;
+                } else {
+                  isMeaningful = false; // Suppress notification if ALL are NO GO
+                  reasoning = consolidatedReasoning;
+                  aiResponse.score = bestResult.score;
+                }
               }
             }
           }
@@ -322,6 +354,9 @@ ${deepContent.substring(0, 15000)}`;
       console.log(`AI analysis complete for ${args.websiteName}: Meaningful: ${isMeaningful}`);
 
       // Trigger AI-based notifications after analysis is complete
+      // If we found duplicates and suppressed the meaningful status, we should also suppress the notification
+      const shouldSuppressNotification = !isMeaningful && reasoning.includes("New opportunities were detected but skipped because they were already analyzed recently");
+
       await ctx.scheduler.runAfter(0, internal.aiAnalysis.handleAIBasedNotifications, {
         userId: args.userId,
         scrapeResultId: args.scrapeResultId,
@@ -336,6 +371,7 @@ ${deepContent.substring(0, 15000)}`;
           analyzedAt: Date.now(),
           model: userSettings.aiModel || "gpt-4o-mini",
         },
+        forceSuppressNotification: shouldSuppressNotification,
       });
     } catch (error) {
       console.error("Error in AI analysis:", error);
@@ -362,9 +398,16 @@ export const handleAIBasedNotifications = internalAction({
       analyzedAt: v.number(),
       model: v.string(),
     }),
+    forceSuppressNotification: v.optional(v.boolean()),
   },
   handler: async (ctx: any, args: any) => {
     try {
+      // If notifications are suppressed (e.g. duplicate analysis), return early
+      if (args.forceSuppressNotification) {
+        console.log(`Notifications suppressed for ${args.websiteName} (likely duplicate analysis).`);
+        return;
+      }
+
       // Get user settings to check notification filtering preferences
       const userSettings = await ctx.runQuery(internal.userSettings.getUserSettingsInternal, {
         userId: args.userId,

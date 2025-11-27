@@ -183,6 +183,17 @@ const schema = defineSchema({
   })
     .index("by_website", ["websiteId"])
     .index("by_user_time", ["userId", "startedAt"]),
+  analyzedOpportunities: defineTable({
+    url: v.string(),
+    userId: v.id("users"),
+    websiteId: v.id("websites"),
+    analyzedAt: v.number(),
+    status: v.string(), // "meaningful", "not_meaningful"
+    score: v.number(),
+  })
+    .index("by_url", ["url"])
+    .index("by_user_url", ["userId", "url"])
+    .index("by_website_url", ["websiteId", "url"]),
 });
 
 export default schema;

@@ -753,3 +753,39 @@ export const getScrapeResult = internalQuery({
     return await ctx.db.get(args.scrapeResultId);
   },
 });
+
+// Check if an opportunity has already been analyzed
+export const getAnalyzedOpportunity = internalQuery({
+  args: {
+    url: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("analyzedOpportunities")
+      .withIndex("by_user_url", (q) => q.eq("userId", args.userId).eq("url", args.url))
+      .order("desc") // Get the most recent one
+      .first();
+  },
+});
+
+// Store an analyzed opportunity
+export const storeAnalyzedOpportunity = internalMutation({
+  args: {
+    url: v.string(),
+    userId: v.id("users"),
+    websiteId: v.id("websites"),
+    status: v.string(),
+    score: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("analyzedOpportunities", {
+      url: args.url,
+      userId: args.userId,
+      websiteId: args.websiteId,
+      status: args.status,
+      score: args.score,
+      analyzedAt: Date.now(),
+    });
+  },
+});
