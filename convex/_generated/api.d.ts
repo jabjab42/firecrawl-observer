@@ -24,6 +24,7 @@ import type * as lib_encryption from "../lib/encryption.js";
 import type * as lib_sanitize from "../lib/sanitize.js";
 import type * as monitoring from "../monitoring.js";
 import type * as notifications from "../notifications.js";
+import type * as passwordReset from "../passwordReset.js";
 import type * as testActions from "../testActions.js";
 import type * as userSettings from "../userSettings.js";
 import type * as users from "../users.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   "lib/sanitize": typeof lib_sanitize;
   monitoring: typeof monitoring;
   notifications: typeof notifications;
+  passwordReset: typeof passwordReset;
   testActions: typeof testActions;
   userSettings: typeof userSettings;
   users: typeof users;

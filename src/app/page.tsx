@@ -455,6 +455,16 @@ export default function HomePage() {
                           {helperText}
                         </p>
                       )}
+                      {authMode === 'signIn' && (
+                        <div className="flex justify-end">
+                          <a
+                            href="/forgot-password"
+                            className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                          >
+                            Forgot password?
+                          </a>
+                        </div>
+                      )}
                     </div>
 
                     <Button

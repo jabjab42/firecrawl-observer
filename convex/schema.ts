@@ -108,6 +108,15 @@ const schema = defineSchema({
     .index("by_website", ["websiteId"])
     .index("by_read_status", ["userId", "isRead"]),
 
+  passwordResets: defineTable({
+    email: v.string(),
+    token: v.string(),
+    expiry: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_token", ["token"])
+    .index("by_email", ["email"]),
+
   emailConfig: defineTable({
     userId: v.id("users"),
     email: v.string(),

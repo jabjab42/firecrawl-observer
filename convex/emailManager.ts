@@ -101,7 +101,7 @@ export const sendVerificationEmail = internalAction({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: `${process.env.APP_NAME || 'Kabuki Observer'} <${process.env.FROM_EMAIL || 'noreply@example.com'}>`,
+          from: `${process.env.APP_NAME || 'Kabuki Observer'} <${process.env.FROM_EMAIL || 'onboarding@resend.dev'}>`,
           to: args.email,
           subject: 'Verify your email for Kabuki Observer',
           html: `
@@ -136,6 +136,68 @@ export const sendVerificationEmail = internalAction({
       }
     } catch (error) {
       console.error("Error sending verification email:", error);
+    }
+  },
+});
+
+// Send password reset email using Resend
+export const sendPasswordResetEmail = internalAction({
+  args: {
+    email: v.string(),
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
+      return;
+    }
+
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${args.token}`;
+
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: `${process.env.APP_NAME || 'Kabuki Observer'} <${process.env.FROM_EMAIL || 'onboarding@resend.dev'}>`,
+          to: args.email,
+          subject: 'Reset your password for Kabuki Observer',
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #EA580C; margin-bottom: 24px;">Reset Your Password</h2>
+              <p style="color: #374151; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
+                We received a request to reset your password for Kabuki Observer. 
+                Click the button below to choose a new password:
+              </p>
+              <a href="${resetUrl}" 
+                 style="display: inline-block; background-color: #EA580C; color: white; padding: 12px 24px; 
+                        text-decoration: none; border-radius: 6px; font-weight: 500;">
+                Reset Password
+              </a>
+              <p style="color: #6B7280; font-size: 14px; margin-top: 24px;">
+                This link will expire in 1 hour. If you didn't request this, please ignore this email.
+              </p>
+              <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 32px 0;">
+              <p style="color: #9CA3AF; font-size: 12px;">
+                Kabuki Observer - Website Change Monitoring
+              </p>
+            </div>
+          `,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("Failed to send password reset email:", error);
+      } else {
+        console.log("Password reset email sent to:", args.email);
+      }
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
     }
   },
 });
