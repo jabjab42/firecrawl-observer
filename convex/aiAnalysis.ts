@@ -357,6 +357,8 @@ Please analyze these changes and determine if they are meaningful.`,
       // If we found duplicates and suppressed the meaningful status, we should also suppress the notification
       const shouldSuppressNotification = !isMeaningful && reasoning.includes("New opportunities were detected but skipped because they were already analyzed recently");
 
+      console.log(`[AI Analysis] Analysis complete. Result: ${isMeaningful ? "MEANINGFUL" : "NOT MEANINGFUL"}. Score: ${isMeaningful ? 100 : 0}. Suppress Notification: ${shouldSuppressNotification}`);
+
       await ctx.scheduler.runAfter(0, internal.aiAnalysis.handleAIBasedNotifications, {
         userId: args.userId,
         scrapeResultId: args.scrapeResultId,
@@ -374,7 +376,7 @@ Please analyze these changes and determine if they are meaningful.`,
         forceSuppressNotification: shouldSuppressNotification,
       });
     } catch (error) {
-      console.error("Error in AI analysis:", error);
+      console.error("[AI Analysis] CRITICAL ERROR:", error);
     }
   },
 });
@@ -402,9 +404,11 @@ export const handleAIBasedNotifications = internalAction({
   },
   handler: async (ctx: any, args: any) => {
     try {
+      console.log(`[Notifications] Processing notifications for ${args.websiteName}. IsMeaningful: ${args.isMeaningful}, ForceSuppress: ${args.forceSuppressNotification}`);
+
       // If notifications are suppressed (e.g. duplicate analysis), return early
       if (args.forceSuppressNotification) {
-        console.log(`Notifications suppressed for ${args.websiteName} (likely duplicate analysis).`);
+        console.log(`[Notifications] SUPPRESSED: ForceSuppress flag is true (likely duplicate analysis).`);
         return;
       }
 
@@ -419,7 +423,7 @@ export const handleAIBasedNotifications = internalAction({
       });
 
       if (!scrapeResult) {
-        console.error("Scrape result not found for notifications");
+        console.error("[Notifications] ERROR: Scrape result not found.");
         return;
       }
 
@@ -429,6 +433,7 @@ export const handleAIBasedNotifications = internalAction({
       });
 
       if (!website || website.notificationPreference === "none") {
+        console.log(`[Notifications] Skipped: Notification preference is '${website?.notificationPreference || "none"}'.`);
         return;
       }
 
@@ -441,8 +446,12 @@ export const handleAIBasedNotifications = internalAction({
       const shouldSendEmail = (website.notificationPreference === "email" || website.notificationPreference === "both") &&
         (!userSettings?.emailOnlyIfMeaningful || args.isMeaningful);
 
+      console.log(`[Notifications] Decision - Webhook: ${shouldSendWebhook}, Email: ${shouldSendEmail}`);
+      console.log(`[Notifications] Config - WebhookURL: ${!!website.webhookUrl}, EmailOnlyIfMeaningful: ${userSettings?.emailOnlyIfMeaningful}, WebhookOnlyIfMeaningful: ${userSettings?.webhookOnlyIfMeaningful}`);
+
       // Send webhook notification if conditions are met
       if (shouldSendWebhook && website.webhookUrl) {
+        console.log(`[Notifications] Queueing Webhook to ${website.webhookUrl}`);
         await ctx.scheduler.runAfter(0, internal.notifications.sendWebhookNotification, {
           webhookUrl: website.webhookUrl,
           websiteId: scrapeResult.websiteId,
@@ -468,6 +477,7 @@ export const handleAIBasedNotifications = internalAction({
         });
 
         if (emailConfig?.email && emailConfig.isVerified) {
+          console.log(`[Notifications] Queueing Email to ${emailConfig.email}`);
           await ctx.scheduler.runAfter(0, internal.notifications.sendEmailNotification, {
             email: emailConfig.email,
             websiteName: website.name,
@@ -480,12 +490,14 @@ export const handleAIBasedNotifications = internalAction({
             userId: args.userId,
             aiAnalysis: args.aiAnalysis,
           });
+        } else {
+          console.log(`[Notifications] Email skipped: No verified email config found. Email: ${emailConfig?.email}, Verified: ${emailConfig?.isVerified}`);
         }
       }
 
-      console.log(`AI-based notifications processed for ${args.websiteName}. Webhook: ${shouldSendWebhook}, Email: ${shouldSendEmail}`);
+      console.log(`[Notifications] Processing complete.`);
     } catch (error) {
-      console.error("Error in AI-based notifications:", error);
+      console.error("[Notifications] CRITICAL ERROR:", error);
     }
   },
 });
