@@ -156,7 +156,7 @@ export const scrapeUrl = internalAction({
       // Scraping URL with change tracking
       // Scrape with change tracking - markdown is required for changeTracking
       const result = await firecrawl.scrapeUrl(args.url, {
-        formats: ["markdown", "changeTracking"],
+        formats: ["markdown", "links", "changeTracking"],
         changeTrackingOptions: {
           modes: ["git-diff"], // Enable git-diff to see what changed
         }
@@ -172,6 +172,7 @@ export const scrapeUrl = internalAction({
       const markdown = result?.markdown || "";
       const changeTracking = result?.changeTracking;
       const metadata = result?.metadata;
+      const links = result?.links || [];
 
       // Log only essential change status
       if (changeTracking?.changeStatus === "changed") {
@@ -222,6 +223,7 @@ export const scrapeUrl = internalAction({
             websiteName: metadata?.title || args.url,
             websiteUrl: args.url,
             diff: changeTracking.diff,
+            links: links, // Pass the links found on the page
           });
         }
 

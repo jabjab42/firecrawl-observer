@@ -189,7 +189,7 @@ NOT meaningful (ignore these):
 - Footer/Header changes
 - General news not related to tenders
 
-IMPORTANT: If you detect a new tender/opportunity, identify the MOST RELEVANT link for detailed information.
+IMPORTANT: If you detect a new tender/opportunity, identify ALL relevant links for detailed information.
 - Look for Markdown links like [Title](https://...) or raw URLs
 - Ignore image links (jpg, png, svg, etc.)
 - Ignore CSS/JS file links
@@ -202,7 +202,7 @@ Analyze the provided diff and return a JSON response with:
   "score": 0-100 (how likely this is a new tender/opportunity),
   "isMeaningful": true/false,
   "reasoning": "Brief explanation of your decision",
-  "relevantLink": "URL of the most relevant page for this opportunity, or null if none found"
+  "relevantLinks": ["URL1", "URL2"] // Array of URLs for the most relevant pages for these opportunities. Return empty array if none found.
 }`;
 
       setAiSystemPrompt(userSettings.aiSystemPrompt || defaultSystemPrompt)

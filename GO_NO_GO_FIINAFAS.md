@@ -1,4 +1,4 @@
-CALCUL DU SCORE (Total sur 110 points) :
+CALCUL DU SCORE (Total sur 100 points) :
 
 1. Segments prioritaires (Jeunes, femmes, vulnérables) :
 - Cible principale = +15 pts
