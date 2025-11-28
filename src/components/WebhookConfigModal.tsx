@@ -18,6 +18,7 @@ interface WebhookConfigModalProps {
     crawlLimit?: number
     crawlDepth?: number
     deepAnalysisEnabled?: boolean
+    headers?: string
     checkNow?: boolean
   }) => void
   initialConfig?: {
@@ -28,6 +29,7 @@ interface WebhookConfigModalProps {
     crawlLimit?: number
     crawlDepth?: number
     deepAnalysisEnabled?: boolean
+    headers?: string
   }
   websiteName: string
 }
@@ -40,6 +42,18 @@ export function WebhookConfigModal({ isOpen, onClose, onSave, initialConfig, web
   const [crawlLimit, setCrawlLimit] = useState(String(initialConfig?.crawlLimit || 5))
   const [crawlDepth, setCrawlDepth] = useState(String(initialConfig?.crawlDepth || 3))
   const [deepAnalysisEnabled, setDeepAnalysisEnabled] = useState(initialConfig?.deepAnalysisEnabled || false)
+
+  // Parse initial headers to get cookie string
+  const getInitialCookie = () => {
+    if (!initialConfig?.headers) return ''
+    try {
+      const parsed = JSON.parse(initialConfig.headers)
+      return parsed.Cookie || ''
+    } catch {
+      return ''
+    }
+  }
+  const [cookieString, setCookieString] = useState(getInitialCookie())
   const [copied, setCopied] = useState(false)
   const [checkNow, setCheckNow] = useState(true) // Default to true for new websites
 
@@ -52,9 +66,10 @@ export function WebhookConfigModal({ isOpen, onClose, onSave, initialConfig, web
       crawlLimit: monitorType === 'full_site' ? parseInt(crawlLimit) : undefined,
       crawlDepth: monitorType === 'full_site' ? parseInt(crawlDepth) : undefined,
       deepAnalysisEnabled: deepAnalysisEnabled,
+      headers: cookieString ? JSON.stringify({ "Cookie": cookieString }) : undefined,
       checkNow: checkNow
     })
-  }, [notificationPreference, webhookUrl, checkInterval, monitorType, crawlLimit, crawlDepth, deepAnalysisEnabled, checkNow, onSave])
+  }, [notificationPreference, webhookUrl, checkInterval, monitorType, crawlLimit, crawlDepth, deepAnalysisEnabled, cookieString, checkNow, onSave])
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -274,6 +289,32 @@ export function WebhookConfigModal({ isOpen, onClose, onSave, initialConfig, web
               </div>
             </div>
 
+            {/* Authentication / Headers Configuration */}
+            <div className="mt-4 pt-4 border-t">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="cookie-string">Session Cookie</Label>
+                  <textarea
+                    id="cookie-string"
+                    value={cookieString}
+                    onChange={(e) => setCookieString(e.target.value)}
+                    placeholder="Paste your session cookie here..."
+                    className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 font-mono"
+                  />
+                  <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-xs rounded border border-blue-100">
+                    <strong>Important:</strong> You must be logged into the website for this to work.
+                    <ol className="list-decimal ml-4 mt-1 space-y-1">
+                      <li>Open the website in your browser and ensure you are logged in.</li>
+                      <li>Open Developer Tools (F12) and go to the <strong>Network</strong> tab.</li>
+                      <li>Refresh the page and click on the first request (usually the website URL).</li>
+                      <li>Look for <strong>Cookie</strong> in the &quot;Request Headers&quot; section.</li>
+                      <li>Copy the entire value and paste it above.</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Notification Type Selection */}
             <div>
               <Label htmlFor="notification-type">Notification Type</Label>
@@ -392,7 +433,7 @@ export function WebhookConfigModal({ isOpen, onClose, onSave, initialConfig, web
             </div>
           </div>
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }

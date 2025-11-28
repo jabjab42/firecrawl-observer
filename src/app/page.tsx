@@ -1834,7 +1834,8 @@ export default function HomePage() {
                   monitorType: config.monitorType,
                   crawlLimit: config.crawlLimit,
                   crawlDepth: config.crawlDepth,
-                  deepAnalysisEnabled: config.deepAnalysisEnabled
+                  deepAnalysisEnabled: config.deepAnalysisEnabled,
+                  headers: config.headers
                 })
 
                 // Add to processing state to show initial setup is happening
@@ -1880,7 +1881,8 @@ export default function HomePage() {
                 monitorType: config.monitorType,
                 crawlLimit: config.crawlLimit,
                 crawlDepth: config.crawlDepth,
-                deepAnalysisEnabled: config.deepAnalysisEnabled
+                deepAnalysisEnabled: config.deepAnalysisEnabled,
+                headers: config.headers
               })
             }
             setShowWebhookModal(false)
@@ -1895,14 +1897,16 @@ export default function HomePage() {
               monitorType: websites?.find(w => w._id === editingWebsiteId)?.monitorType || 'single_page',
               crawlLimit: websites?.find(w => w._id === editingWebsiteId)?.crawlLimit || 5,
               crawlDepth: websites?.find(w => w._id === editingWebsiteId)?.crawlDepth || 3,
-              deepAnalysisEnabled: websites?.find(w => w._id === editingWebsiteId)?.deepAnalysisEnabled || false
+              deepAnalysisEnabled: websites?.find(w => w._id === editingWebsiteId)?.deepAnalysisEnabled || false,
+              headers: websites?.find(w => w._id === editingWebsiteId)?.headers || ''
             } : {
               notificationPreference: 'none',
               checkInterval: 60,
               monitorType: 'single_page',
               crawlLimit: 5,
               crawlDepth: 3,
-              deepAnalysisEnabled: false
+              deepAnalysisEnabled: false,
+              headers: ''
             }
           }
           websiteName={pendingWebsite?.name || websites?.find(w => w._id === editingWebsiteId)?.name || 'Website'}

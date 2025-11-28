@@ -152,15 +152,33 @@ export const scrapeUrl = internalAction({
   }> => {
     const firecrawl = await getFirecrawlClient(ctx, args.userId);
 
+    // Get website details to check for headers
+    const website = await ctx.runQuery(internal.websites.getWebsite, {
+      websiteId: args.websiteId,
+      userId: args.userId,
+    });
+
+    let scrapeOptions: any = {
+      formats: ["markdown", "links", "changeTracking"],
+      changeTrackingOptions: {
+        modes: ["git-diff"], // Enable git-diff to see what changed
+      }
+    };
+
+    // Add headers if configured
+    if (website?.headers) {
+      try {
+        const headers = JSON.parse(website.headers);
+        scrapeOptions.headers = headers;
+      } catch (e) {
+        console.error("Failed to parse website headers:", e);
+      }
+    }
+
     try {
       // Scraping URL with change tracking
       // Scrape with change tracking - markdown is required for changeTracking
-      const result = await firecrawl.scrapeUrl(args.url, {
-        formats: ["markdown", "links", "changeTracking"],
-        changeTrackingOptions: {
-          modes: ["git-diff"], // Enable git-diff to see what changed
-        }
-      }) as any;
+      const result = await firecrawl.scrapeUrl(args.url, scrapeOptions) as any;
 
       if (!result.success) {
         throw new Error(`Firecrawl scrape failed: ${result.error}`);

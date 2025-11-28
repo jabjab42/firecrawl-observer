@@ -53,6 +53,7 @@ const schema = defineSchema({
     lastCrawlAt: v.optional(v.number()),
     totalPages: v.optional(v.number()), // total pages found in last crawl
     deepAnalysisEnabled: v.optional(v.boolean()), // Enable following links for deep analysis
+    headers: v.optional(v.string()), // JSON stringified headers (cookies, etc.)
     createdAt: v.number(),
     updatedAt: v.number(),
   })

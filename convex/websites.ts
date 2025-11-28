@@ -24,6 +24,7 @@ export const createWebsite = mutation({
     crawlLimit: v.optional(v.number()),
     crawlDepth: v.optional(v.number()),
     deepAnalysisEnabled: v.optional(v.boolean()),
+    headers: v.optional(v.string()),
   },
   handler: async (ctx: any, args: any) => {
     const user = await requireCurrentUser(ctx);
@@ -53,6 +54,7 @@ export const createWebsite = mutation({
       crawlLimit: args.crawlLimit,
       crawlDepth: args.crawlDepth,
       deepAnalysisEnabled: args.deepAnalysisEnabled || false,
+      headers: args.headers,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -165,6 +167,7 @@ export const updateWebsite = mutation({
     crawlLimit: v.optional(v.number()),
     crawlDepth: v.optional(v.number()),
     deepAnalysisEnabled: v.optional(v.boolean()),
+    headers: v.optional(v.string()),
   },
   handler: async (ctx: any, args: any) => {
     const user = await requireCurrentUser(ctx);
@@ -204,6 +207,10 @@ export const updateWebsite = mutation({
 
     if (args.deepAnalysisEnabled !== undefined) {
       updates.deepAnalysisEnabled = args.deepAnalysisEnabled;
+    }
+
+    if (args.headers !== undefined) {
+      updates.headers = args.headers;
     }
 
     await ctx.db.patch(args.websiteId, updates);

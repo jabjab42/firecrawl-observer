@@ -12,7 +12,7 @@ export const performCrawl = internalAction({
   },
   handler: async (ctx, args) => {
     // Starting crawl for website
-    
+
     // Get website details
     const website = await ctx.runQuery(internal.websites.getWebsite, {
       websiteId: args.websiteId,
@@ -22,7 +22,7 @@ export const performCrawl = internalAction({
     if (!website || website.monitorType !== "full_site") {
       throw new Error("Website not found or not a full site monitor");
     }
-    
+
     // Starting full crawl with configured settings
 
     // Update lastChecked immediately to prevent duplicate crawls
@@ -39,17 +39,30 @@ export const performCrawl = internalAction({
     try {
       // Perform the crawl using Firecrawl
       const firecrawl = await getFirecrawlClient(ctx, args.userId);
-      
+
       // Initiating Firecrawl crawl
-      
-      // Start the crawl - this might return a job ID instead of immediate results
-      const crawlResponse = await firecrawl.crawlUrl(website.url, {
+
+      // Prepare crawl options
+      let crawlOptions: any = {
         limit: website.crawlLimit || 10,
         maxDepth: website.crawlDepth || 3,
         scrapeOptions: {
           formats: ["markdown", "changeTracking"],
         },
-      }) as any;
+      };
+
+      // Add headers if configured
+      if (website.headers) {
+        try {
+          const headers = JSON.parse(website.headers);
+          crawlOptions.headers = headers;
+        } catch (e) {
+          console.error("Failed to parse website headers:", e);
+        }
+      }
+
+      // Start the crawl - this might return a job ID instead of immediate results
+      const crawlResponse = await firecrawl.crawlUrl(website.url, crawlOptions) as any;
 
       console.log(`Crawl response received, jobId: ${crawlResponse.jobId || crawlResponse.id || 'N/A'}`);
 
@@ -57,13 +70,13 @@ export const performCrawl = internalAction({
       if (crawlResponse.jobId || crawlResponse.id) {
         const jobId = crawlResponse.jobId || crawlResponse.id;
         console.log(`Crawl started with job ID: ${jobId}`);
-        
+
         // Store the job ID in the crawl session
         await ctx.runMutation(internal.crawl.updateCrawlSessionJobId, {
           sessionId,
           jobId,
         });
-        
+
         // Schedule job status checking
         await ctx.scheduler.runAfter(5000, internal.crawl.checkCrawlJobStatus, {
           sessionId,
@@ -72,7 +85,7 @@ export const performCrawl = internalAction({
           userId: args.userId,
           attempt: 1,
         });
-        
+
         return { success: true, pagesFound: 0, jobId };
       }
 
@@ -82,7 +95,7 @@ export const performCrawl = internalAction({
       }
 
       const pages = crawlResponse.data || [];
-      
+
       // Process each page from the crawl
       for (const page of pages) {
         const pageUrl = page.url || page.metadata?.url;
@@ -110,7 +123,7 @@ export const performCrawl = internalAction({
               json: page.changeTracking.diff.json || null,
             } : undefined,
           });
-          
+
           // Handle notifications for changed pages
           if (page.changeTracking?.changeStatus === "changed" && page.changeTracking?.diff) {
             await ctx.runMutation(internal.websites.createChangeAlert, {
@@ -224,8 +237,8 @@ export const checkCrawledPages = internalAction({
         websiteId: args.websiteId,
         userId: args.userId,
       });
-      
-      return { 
+
+      return {
         pagesChecked: 0, // Will be updated by the crawl
         errors: 0,
       };
@@ -238,7 +251,7 @@ export const checkCrawledPages = internalAction({
       userId: args.userId,
     });
 
-    return { 
+    return {
       pagesChecked: 1,
       errors: 0,
     };
@@ -279,19 +292,19 @@ export const checkCrawlJobStatus = internalAction({
   },
   handler: async (ctx, args) => {
     console.log(`Checking crawl job status: ${args.jobId} (attempt ${args.attempt})`);
-    
+
     try {
       const firecrawl = await getFirecrawlClient(ctx, args.userId);
-      
+
       // Check job status
       const status = await firecrawl.checkCrawlStatus(args.jobId) as any;
-      
+
       // Check if crawl is complete
       console.log(`Crawl job ${args.jobId} status: ${status.status}`);
-      
+
       if (status.status === "completed" && status.data) {
         console.log(`Crawl completed with ${status.data.length} pages`);
-        
+
         // Process each page from the crawl
         for (const page of status.data) {
           const pageUrl = page.url || page.metadata?.url;
@@ -319,7 +332,7 @@ export const checkCrawlJobStatus = internalAction({
                 json: page.changeTracking.diff.json || null,
               } : undefined,
             });
-            
+
             // Handle notifications for changed pages
             if (page.changeTracking?.changeStatus === "changed" && page.changeTracking?.diff) {
               await ctx.runMutation(internal.websites.createChangeAlert, {
@@ -339,14 +352,14 @@ export const checkCrawlJobStatus = internalAction({
           pagesFound: status.data.length,
           websiteId: args.websiteId,
         });
-        
+
         return { success: true, pagesFound: status.data.length };
       } else if (status.status === "failed" || status.status === "error") {
         throw new Error(`Crawl job failed: ${status.error || "Unknown error"}`);
       } else {
         // Still in progress, check again later
         // Still in progress, will check again
-        
+
         // Limit retries to prevent infinite loops
         if (args.attempt < 60) { // Max 10 minutes of checking
           await ctx.scheduler.runAfter(10000, internal.crawl.checkCrawlJobStatus, {

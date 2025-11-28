@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin from "../admin.js";
 import type * as aiAnalysis from "../aiAnalysis.js";
 import type * as alertEmail from "../alertEmail.js";
 import type * as apiKeys from "../apiKeys.js";
@@ -38,6 +39,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   aiAnalysis: typeof aiAnalysis;
   alertEmail: typeof alertEmail;
   apiKeys: typeof apiKeys;
