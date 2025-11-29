@@ -136,7 +136,7 @@ export const sendTestEmailInternal = internalAction({
         .replace(/{{changeDate}}/g, new Date().toLocaleString())
         .replace(/{{changeType}}/g, 'Content changed')
         .replace(/{{pageTitle}}/g, 'Test Page Title')
-        .replace(/{{viewChangesUrl}}/g, process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
+        .replace(/{{viewChangesUrl}}/g, process.env.SITE_URL || 'http://localhost:3000')
         .replace(/{{aiMeaningfulScore}}/g, '85')
         .replace(/{{aiIsMeaningful}}/g, 'Yes')
         .replace(/{{aiReasoning}}/g, 'This is a test email to verify your email template is working correctly.')

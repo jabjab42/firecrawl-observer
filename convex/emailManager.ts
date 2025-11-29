@@ -91,7 +91,7 @@ export const sendVerificationEmail = internalAction({
       return;
     }
 
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/verify-email?token=${args.token}`;
+    const verificationUrl = `${process.env.SITE_URL || 'http://localhost:3000'}/api/verify-email?token=${args.token}`;
 
     try {
       const response = await fetch('https://api.resend.com/emails', {
@@ -153,7 +153,7 @@ export const sendPasswordResetEmail = internalAction({
       return;
     }
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${args.token}`;
+    const resetUrl = `${process.env.SITE_URL || 'http://localhost:3000'}/reset-password?token=${args.token}`;
 
     try {
       const response = await fetch('https://api.resend.com/emails', {

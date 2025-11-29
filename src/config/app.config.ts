@@ -44,8 +44,8 @@ export function getFromEmail(): string {
 }
 
 export function getAppUrl(): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.SITE_URL ||
+  const baseUrl = process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
     'http://localhost:3000'
   return baseUrl.replace(/\/$/, '') // Remove trailing slash
 }

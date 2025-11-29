@@ -200,7 +200,7 @@ export const sendEmailNotification = internalAction({
             </div>
           ` : ''}
         </div>
-        <p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}" style="background: #ff6600; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Changes</a></p>
+        <p><a href="${process.env.SITE_URL || 'http://localhost:3000'}" style="background: #ff6600; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Changes</a></p>
       `;
     }
 
