@@ -4,10 +4,9 @@ import React, { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { AdminLayout } from '@/components/admin/AdminLayout'
-import { Loader2, Search, User, Globe, AlertCircle } from 'lucide-react'
+import { Loader2, Search, User, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 
 export default function AdminDashboard() {
     const users = useQuery(api.admin.getAllUsers)

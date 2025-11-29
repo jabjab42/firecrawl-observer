@@ -73,12 +73,13 @@ function ResetPasswordContent() {
             setTimeout(() => {
                 router.push('/')
             }, 3000)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
+            const errorMessage = error instanceof Error ? error.message : 'The reset link may have expired or is invalid.'
             addToast({
                 variant: 'error',
                 title: 'Reset Failed',
-                description: error.message || 'The reset link may have expired or is invalid.',
+                description: errorMessage,
                 duration: 5000
             })
         } finally {

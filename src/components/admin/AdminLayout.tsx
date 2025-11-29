@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Layout, MainContent } from '@/components/layout/layout'
 import { Header } from '@/components/layout/header'
-import { Users, Settings, Shield } from 'lucide-react'
+import { Users, Shield } from 'lucide-react'
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
@@ -27,8 +27,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                                 <Link
                                     href="/admin"
                                     className={`flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${pathname === '/admin'
-                                            ? 'bg-orange-50 text-orange-700'
-                                            : 'text-gray-700 hover:bg-gray-50'
+                                        ? 'bg-orange-50 text-orange-700'
+                                        : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
                                     <Users className="h-4 w-4" />

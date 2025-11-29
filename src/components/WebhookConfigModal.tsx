@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, Mail, Copy, Check, Network, FileText } from 'lucide-react'
+import { X, Mail, Copy, Check, Network, FileText, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,7 +41,9 @@ export function WebhookConfigModal({ isOpen, onClose, onSave, initialConfig, web
   const [monitorType, setMonitorType] = useState(initialConfig?.monitorType || 'single_page')
   const [crawlLimit, setCrawlLimit] = useState(String(initialConfig?.crawlLimit || 5))
   const [crawlDepth, setCrawlDepth] = useState(String(initialConfig?.crawlDepth || 3))
-  const [deepAnalysisEnabled, setDeepAnalysisEnabled] = useState(initialConfig?.deepAnalysisEnabled || false)
+  // Default deepAnalysisEnabled to true if not provided (i.e. for new websites)
+  const [deepAnalysisEnabled, setDeepAnalysisEnabled] = useState(initialConfig?.deepAnalysisEnabled ?? true)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   // Parse initial headers to get cookie string
   const getInitialCookie = () => {
@@ -183,136 +185,158 @@ export function WebhookConfigModal({ isOpen, onClose, onSave, initialConfig, web
                 </div>
               )}
 
-              {/* Monitor Type */}
-              <div className="mb-4">
-                <Label htmlFor="monitor-type">Monitor Type</Label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => setMonitorType('single_page')}
-                    className={`p-3 rounded-lg border-2 transition-all ${monitorType === 'single_page'
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                  >
-                    <FileText className={`h-5 w-5 mx-auto mb-1 ${monitorType === 'single_page' ? 'text-orange-600' : 'text-gray-500'
-                      }`} />
-                    <span className={`text-sm font-medium ${monitorType === 'single_page' ? 'text-orange-900' : 'text-gray-700'
-                      }`}>Single Page</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMonitorType('full_site')}
-                    className={`p-3 rounded-lg border-2 transition-all ${monitorType === 'full_site'
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                  >
-                    <Network className={`h-5 w-5 mx-auto mb-1 ${monitorType === 'full_site' ? 'text-orange-600' : 'text-gray-500'
-                      }`} />
-                    <span className={`text-sm font-medium ${monitorType === 'full_site' ? 'text-orange-900' : 'text-gray-700'
-                      }`}>Full Site</span>
-                  </button>
-                </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  {monitorType === 'single_page'
-                    ? 'Monitor changes on a specific page URL'
-                    : 'Crawl and monitor multiple pages across the entire website'}
-                </p>
+              {/* Advanced Options Toggle */}
+              <div className="border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  {showAdvanced ? (
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                  )}
+                  Advanced Options
+                </button>
               </div>
 
-              {/* Crawl Configuration */}
-              {monitorType === 'full_site' && (
-                <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <Label htmlFor="crawl-limit">Maximum Pages to Crawl</Label>
-                    <Input
-                      id="crawl-limit"
-                      type="number"
-                      min="1"
-                      max="1000"
-                      value={crawlLimit}
-                      onChange={(e) => setCrawlLimit(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                      className="mt-1"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Limit the number of pages to crawl (default: 5)
+              {/* Advanced Options Content */}
+              {showAdvanced && (
+                <div className="space-y-6 pt-4 pl-2 border-l-2 border-gray-100 ml-2">
+                  {/* Monitor Type */}
+                  <div className="mb-4">
+                    <Label htmlFor="monitor-type">Monitor Type</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setMonitorType('single_page')}
+                        className={`p-3 rounded-lg border-2 transition-all ${monitorType === 'single_page'
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                      >
+                        <FileText className={`h-5 w-5 mx-auto mb-1 ${monitorType === 'single_page' ? 'text-orange-600' : 'text-gray-500'
+                          }`} />
+                        <span className={`text-sm font-medium ${monitorType === 'single_page' ? 'text-orange-900' : 'text-gray-700'
+                          }`}>Single Page</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setMonitorType('full_site')}
+                        className={`p-3 rounded-lg border-2 transition-all ${monitorType === 'full_site'
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                      >
+                        <Network className={`h-5 w-5 mx-auto mb-1 ${monitorType === 'full_site' ? 'text-orange-600' : 'text-gray-500'
+                          }`} />
+                        <span className={`text-sm font-medium ${monitorType === 'full_site' ? 'text-orange-900' : 'text-gray-700'
+                          }`}>Full Site</span>
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                      {monitorType === 'single_page'
+                        ? 'Monitor changes on a specific page URL'
+                        : 'Crawl and monitor multiple pages across the entire website'}
                     </p>
                   </div>
 
-                  <div>
-                    <Label htmlFor="crawl-depth">Maximum Crawl Depth</Label>
-                    <Input
-                      id="crawl-depth"
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={crawlDepth}
-                      onChange={(e) => setCrawlDepth(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                      className="mt-1"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      How many levels deep to crawl from the starting page (default: 3)
-                    </p>
+                  {/* Crawl Configuration */}
+                  {monitorType === 'full_site' && (
+                    <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label htmlFor="crawl-limit">Maximum Pages to Crawl</Label>
+                        <Input
+                          id="crawl-limit"
+                          type="number"
+                          min="1"
+                          max="1000"
+                          value={crawlLimit}
+                          onChange={(e) => setCrawlLimit(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                          className="mt-1"
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          Limit the number of pages to crawl (default: 5)
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="crawl-depth">Maximum Crawl Depth</Label>
+                        <Input
+                          id="crawl-depth"
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={crawlDepth}
+                          onChange={(e) => setCrawlDepth(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                          className="mt-1"
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          How many levels deep to crawl from the starting page (default: 3)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+
+                  {/* Deep Analysis Configuration */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-center h-5">
+                        <input
+                          id="deep-analysis"
+                          type="checkbox"
+                          checked={deepAnalysisEnabled}
+                          onChange={(e) => setDeepAnalysisEnabled(e.target.checked)}
+                          className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor="deep-analysis" className="font-medium text-gray-900">
+                          Enable Deep Analysis (Follow Links)
+                        </Label>
+                        <p className="text-sm text-gray-500 mt-1">
+                          When enabled, we&apos;ll automatically visit new links found on the page and analyze them using your &quot;Go/No Go&quot; rules.
+                        </p>
+                        <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-xs rounded border border-blue-100">
+                          <strong>Note:</strong> This consumes more AI credits and Firecrawl scrapes. Make sure you have defined your &quot;Go/No Go Rules&quot; in Settings.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Authentication / Headers Configuration */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="cookie-string">Session Cookie</Label>
+                        <textarea
+                          id="cookie-string"
+                          value={cookieString}
+                          onChange={(e) => setCookieString(e.target.value)}
+                          placeholder="Paste your session cookie here..."
+                          className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 font-mono"
+                        />
+                        <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-xs rounded border border-blue-100">
+                          <strong>Important:</strong> You must be logged into the website for this to work.
+                          <ol className="list-decimal ml-4 mt-1 space-y-1">
+                            <li>Open the website in your browser and ensure you are logged in.</li>
+                            <li>Open Developer Tools (F12) and go to the <strong>Network</strong> tab.</li>
+                            <li>Refresh the page and click on the first request (usually the website URL).</li>
+                            <li>Look for <strong>Cookie</strong> in the &quot;Request Headers&quot; section.</li>
+                            <li>Copy the entire value and paste it above.</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
-
-              {/* Deep Analysis Configuration */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-start gap-3">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="deep-analysis"
-                      type="checkbox"
-                      checked={deepAnalysisEnabled}
-                      onChange={(e) => setDeepAnalysisEnabled(e.target.checked)}
-                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Label htmlFor="deep-analysis" className="font-medium text-gray-900">
-                      Enable Deep Analysis (Follow Links)
-                    </Label>
-                    <p className="text-sm text-gray-500 mt-1">
-                      When enabled, we&apos;ll automatically visit new links found on the page and analyze them using your &quot;Go/No Go&quot; rules.
-                    </p>
-                    <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-xs rounded border border-blue-100">
-                      <strong>Note:</strong> This consumes more AI credits and Firecrawl scrapes. Make sure you have defined your &quot;Go/No Go Rules&quot; in Settings.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Authentication / Headers Configuration */}
-            <div className="mt-4 pt-4 border-t">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="cookie-string">Session Cookie</Label>
-                  <textarea
-                    id="cookie-string"
-                    value={cookieString}
-                    onChange={(e) => setCookieString(e.target.value)}
-                    placeholder="Paste your session cookie here..."
-                    className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1 font-mono"
-                  />
-                  <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-xs rounded border border-blue-100">
-                    <strong>Important:</strong> You must be logged into the website for this to work.
-                    <ol className="list-decimal ml-4 mt-1 space-y-1">
-                      <li>Open the website in your browser and ensure you are logged in.</li>
-                      <li>Open Developer Tools (F12) and go to the <strong>Network</strong> tab.</li>
-                      <li>Refresh the page and click on the first request (usually the website URL).</li>
-                      <li>Look for <strong>Cookie</strong> in the &quot;Request Headers&quot; section.</li>
-                      <li>Copy the entire value and paste it above.</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Notification Type Selection */}

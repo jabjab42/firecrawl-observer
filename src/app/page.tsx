@@ -1905,7 +1905,7 @@ export default function HomePage() {
               monitorType: 'single_page',
               crawlLimit: 5,
               crawlDepth: 3,
-              deepAnalysisEnabled: false,
+              deepAnalysisEnabled: true,
               headers: ''
             }
           }

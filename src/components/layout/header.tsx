@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
-import { Github, LogOut, User, Loader2, ChevronDown, Code, BookOpen, Settings, Coins } from 'lucide-react'
+import { Github, LogOut, User, Loader2, ChevronDown, Settings, Coins } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,

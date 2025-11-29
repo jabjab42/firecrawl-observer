@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../../../convex/_generated/api'
 import { Id } from '../../../../../convex/_generated/dataModel'
 import { AdminLayout } from '@/components/admin/AdminLayout'
-import { Loader2, ArrowLeft, Save, CheckCircle, AlertCircle, Mail, Bot, Globe, Settings } from 'lucide-react'
+import { Loader2, ArrowLeft, Save, CheckCircle, Mail, Bot, Globe, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch'
 export default function AdminUserDetail() {
     const params = useParams()
     const userId = params.userId as Id<"users">
-    const router = useRouter()
+
 
     const data = useQuery(api.admin.getUserDetails, { userId })
     const updateUserEmailConfig = useMutation(api.admin.updateUserEmailConfig)
@@ -320,7 +320,7 @@ export default function AdminUserDetail() {
     )
 }
 
-function UserIcon(props: any) {
+function UserIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             {...props}
