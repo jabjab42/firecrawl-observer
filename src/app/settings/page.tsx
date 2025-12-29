@@ -786,7 +786,7 @@ Analyze the provided diff and return a JSON response with:
                             <ol className="list-decimal list-inside space-y-1 text-xs">
                               <li>Go to <a href="https://api.slack.com/apps" target="_blank" className="underline">api.slack.com/apps</a> and create a new app</li>
                               <li>Enable <strong>Incoming Webhooks</strong> in the sidebar</li>
-                              <li>Click "Add New Webhook to Workspace"</li>
+                              <li>Click &quot;Add New Webhook to Workspace&quot;</li>
                               <li>Copy the Webhook URL and paste it above</li>
                             </ol>
                             <p className="mt-2 text-xs italic">
