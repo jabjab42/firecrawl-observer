@@ -784,10 +784,10 @@ Analyze the provided diff and return a JSON response with:
                             </p>
                             <p className="mb-2">To get notifications in Slack:</p>
                             <ol className="list-decimal list-inside space-y-1 text-xs">
-                              <li>Go to <a href="https://api.slack.com/apps" target="_blank" className="underline">api.slack.com/apps</a> and create a new app</li>
-                              <li>Enable <strong>Incoming Webhooks</strong> in the sidebar</li>
-                              <li>Click &quot;Add New Webhook to Workspace&quot;</li>
-                              <li>Copy the Webhook URL and paste it above</li>
+                              <li>Go to <a href="https://api.slack.com/apps" target="_blank" className="underline">api.slack.com/apps</a> &rarr; Create New App (From scratch)</li>
+                              <li>Select <strong>Incoming Webhooks</strong> in the left sidebar and Toggle <strong>On</strong></li>
+                              <li>Click &quot;Add New Webhook to Workspace&quot; and select a channel</li>
+                              <li>Copy the Webhook URL (starts with https://hooks.slack.com)</li>
                             </ol>
                             <p className="mt-2 text-xs italic">
                               We automatically detect Slack URLs and format messages beautifully for Slack!

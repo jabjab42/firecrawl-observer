@@ -57,9 +57,11 @@ Analyze the provided diff and return a JSON response with:
 {
   "score": 0-100 (how likely this is a new tender/opportunity),
   "isMeaningful": true/false,
-  "reasoning": "Brief explanation of your decision",
+  "reasoning": "Brief explanation of your decision (EN FRANÇAIS)",
   "relevantLinkIndices": [1, 5] // Array of numbers corresponding to the indices in the "Potential Links" list. Return empty array if none found.
-}`;
+}
+
+IMPORTANT: Le champ "reasoning" DOIT être rédigé en FRANÇAIS.`;
 
     try {
       // Use custom base URL if provided, otherwise default to OpenAI
@@ -216,7 +218,7 @@ Please analyze these changes and determine if they are meaningful.`,
             if (newTargetUrls.length === 0) {
               console.log(`[Deep Analysis] All identified links have been analyzed recently. Skipping deep analysis.`);
               isMeaningful = false; // Override to false if only duplicates found
-              reasoning += "\n\n(Note: New opportunities were detected but skipped because they were already analyzed recently.)";
+              reasoning += "\n\n(Note : De nouvelles opportunités ont été détectées mais ignorées car elles ont été analysées récemment.)";
             } else {
               console.log(`Performing deep analysis on ${newTargetUrls.length} new links (out of ${targetUrls.length} identified).`);
 
@@ -241,13 +243,13 @@ Please analyze these changes and determine if they are meaningful.`,
   Evaluate the opportunity based STRICTLY on the provided rules.
   1. Assign a score from 0 to 100 based on how well it matches the criteria.
   2. Determine if it is a "GO" (score >= 50) or "NO GO" (score < 50).
-  3. Provide a concise explanation for the score.
+  3. Provide a concise explanation for the score (IN FRENCH).
   
   Return JSON:
   {
     "score": number, // 0-100
     "isGo": boolean,
-    "reasoning": "Concise explanation based on the rules"
+    "reasoning": "Concise explanation based on the rules (IN FRENCH)"
   }`;
 
                   const userContent = `User's Go/No Go Rules:
@@ -311,14 +313,14 @@ Please analyze these changes and determine if they are meaningful.`,
                 const bestResult = validResults.reduce((prev: any, current: any) => (prev.score > current.score) ? prev : current, validResults[0]);
 
                 // Construct consolidated reasoning
-                let consolidatedReasoning = `Deep Analysis performed on ${validResults.length} links.\n\n`;
+                let consolidatedReasoning = ``;
 
                 validResults.forEach((r: any) => {
                   const icon = r.isGo ? '✅' : '❌';
-                  consolidatedReasoning += `${icon} [${r.score}/100] ${r.url}\n${r.reasoning}\n\n`;
+                  consolidatedReasoning += `${icon} [${r.score}/100]\n<${r.url}|Voir l'annonce>\n${r.reasoning}\n\n`;
                 });
 
-                consolidatedReasoning += `Original Change: ${reasoning}`;
+                // consolidatedReasoning += `Original Change: ${reasoning}`;
 
                 // OVERRIDE the main analysis
                 if (goResults.length > 0) {

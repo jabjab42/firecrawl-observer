@@ -82,7 +82,7 @@ export const sendWebhookNotification = internalAction({
         // Format for Slack Block Kit
         const summaryText = args.diff?.text ? 
           args.diff.text.substring(0, 500) + (args.diff.text.length > 500 ? "..." : "") : 
-          "No text content changes detected.";
+          "Aucun changement de texte détecté.";
         
         // Status color
         const statusColor = args.aiAnalysis?.isMeaningfulChange ? "#22c55e" : "#f97316";
@@ -95,7 +95,7 @@ export const sendWebhookNotification = internalAction({
               type: "header",
               text: {
                 type: "plain_text",
-                text: `${statusIcon} Change Detected: ${args.websiteName}`,
+                text: `${statusIcon} Changement Détecté : ${args.websiteName}`,
                 emoji: true
               }
             },
@@ -104,11 +104,11 @@ export const sendWebhookNotification = internalAction({
               fields: [
                 {
                   type: "mrkdwn",
-                  text: `*Website:*\n<${args.websiteUrl}|${args.websiteName}>`
+                  text: `*Site Web :*\n<${args.websiteUrl}|${args.websiteName}>`
                 },
                 {
                   type: "mrkdwn",
-                  text: `*Time:*\n${new Date(args.scrapedAt).toLocaleString()}`
+                  text: `*Date :*\n${new Date(args.scrapedAt).toLocaleString('fr-FR')}`
                 }
               ]
             },
@@ -125,7 +125,7 @@ export const sendWebhookNotification = internalAction({
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*AI Analysis:* ${args.aiAnalysis.isMeaningfulChange ? "*Meaningful* ✅" : "Not Meaningful ℹ️"} (${args.aiAnalysis.meaningfulChangeScore}%)\n${args.aiAnalysis.reasoning}`
+              text: `${args.aiAnalysis.reasoning}`
             }
           });
           // @ts-ignore
@@ -134,32 +134,32 @@ export const sendWebhookNotification = internalAction({
 
         // Add Diff Summary
         // @ts-ignore
-        finalPayload.blocks.push({
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*Diff Summary:*\n\`\`\`${summaryText}\`\`\``
-          }
-        });
+        // finalPayload.blocks.push({
+        //   type: "section",
+        //   text: {
+        //     type: "mrkdwn",
+        //     text: `*Diff Summary:*\n\`\`\`${summaryText}\`\`\``
+        //   }
+        // });
 
-        // Add View Button
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.CONVEX_SITE_URL || 'http://localhost:3000';
+        // Add View Button - REMOVED per user request
+        // const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.CONVEX_SITE_URL || 'http://localhost:3000';
         // @ts-ignore
-        finalPayload.blocks.push({
-          type: "actions",
-          elements: [
-            {
-              type: "button",
-              text: {
-                type: "plain_text",
-                text: "View Full Changes",
-                emoji: true
-              },
-              url: appUrl,
-              style: "primary"
-            }
-          ]
-        });
+        // finalPayload.blocks.push({
+        //   type: "actions",
+        //   elements: [
+        //     {
+        //       type: "button",
+        //       text: {
+        //         type: "plain_text",
+        //         text: "Voir les changements",
+        //         emoji: true
+        //       },
+        //       url: appUrl,
+        //       style: "primary"
+        //     }
+        //   ]
+        // });
       }
 
       // Check if the webhook URL is localhost or a private network
@@ -265,7 +265,7 @@ export const sendEmailNotification = internalAction({
         .replace(/{{viewChangesUrl}}/g, process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
         .replace(/{{aiMeaningfulScore}}/g, args.aiAnalysis?.meaningfulChangeScore?.toString() || 'N/A')
         .replace(/{{aiIsMeaningful}}/g, args.aiAnalysis?.isMeaningfulChange ? 'Yes' : 'No')
-        .replace(/{{aiReasoning}}/g, args.aiAnalysis?.reasoning || 'N/A')
+        .replace(/{{aiReasoning}}/g, (args.aiAnalysis?.reasoning || 'N/A').replace(/<([^|]+)\|([^>]+)>/g, '<a href="$1">$2</a>'))
         .replace(/{{aiModel}}/g, args.aiAnalysis?.model || 'N/A')
         .replace(/{{aiAnalyzedAt}}/g, args.aiAnalysis?.analyzedAt ? new Date(args.aiAnalysis.analyzedAt).toLocaleString() : 'N/A');
 
@@ -285,7 +285,7 @@ export const sendEmailNotification = internalAction({
             <div style="background: #e8f4f8; border-left: 4px solid #2196F3; padding: 12px; margin: 15px 0;">
               <h4 style="margin: 0 0 8px 0; color: #1976D2;">AI Analysis</h4>
               <p><strong>Meaningful Change:</strong> ${args.aiAnalysis.isMeaningfulChange ? 'Yes' : 'No'} (${args.aiAnalysis.meaningfulChangeScore}% score)</p>
-              <p><strong>Reasoning:</strong> ${args.aiAnalysis.reasoning}</p>
+              <p><strong>Reasoning:</strong> ${args.aiAnalysis.reasoning.replace(/<([^|]+)\|([^>]+)>/g, '<a href="$1">$2</a>')}</p>
               <p style="font-size: 12px; color: #666; margin: 8px 0 0 0;">Analyzed by ${args.aiAnalysis.model} at ${new Date(args.aiAnalysis.analyzedAt).toLocaleString()}</p>
             </div>
           ` : ''}
