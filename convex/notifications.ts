@@ -72,6 +72,96 @@ export const sendWebhookNotification = internalAction({
     try {
       console.log(`Sending webhook to ${args.webhookUrl}`);
 
+      // Check if it's a Slack webhook
+      const isSlack = args.webhookUrl.includes('hooks.slack.com');
+      let finalPayload = payload;
+
+      if (isSlack) {
+        console.log("Detected Slack webhook URL. Formatting payload for Slack.");
+        
+        // Format for Slack Block Kit
+        const summaryText = args.diff?.text ? 
+          args.diff.text.substring(0, 500) + (args.diff.text.length > 500 ? "..." : "") : 
+          "No text content changes detected.";
+        
+        // Status color
+        const statusColor = args.aiAnalysis?.isMeaningfulChange ? "#22c55e" : "#f97316";
+        const statusIcon = args.aiAnalysis?.isMeaningfulChange ? "🚨" : "📝";
+
+        finalPayload = {
+          // @ts-ignore
+          blocks: [
+            {
+              type: "header",
+              text: {
+                type: "plain_text",
+                text: `${statusIcon} Change Detected: ${args.websiteName}`,
+                emoji: true
+              }
+            },
+            {
+              type: "section",
+              fields: [
+                {
+                  type: "mrkdwn",
+                  text: `*Website:*\n<${args.websiteUrl}|${args.websiteName}>`
+                },
+                {
+                  type: "mrkdwn",
+                  text: `*Time:*\n${new Date(args.scrapedAt).toLocaleString()}`
+                }
+              ]
+            },
+            {
+              type: "divider"
+            }
+          ]
+        };
+
+        // Add AI Analysis if available
+        if (args.aiAnalysis) {
+          // @ts-ignore
+          finalPayload.blocks.push({
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*AI Analysis:* ${args.aiAnalysis.isMeaningfulChange ? "*Meaningful* ✅" : "Not Meaningful ℹ️"} (${args.aiAnalysis.meaningfulChangeScore}%)\n${args.aiAnalysis.reasoning}`
+            }
+          });
+          // @ts-ignore
+          finalPayload.blocks.push({ type: "divider" });
+        }
+
+        // Add Diff Summary
+        // @ts-ignore
+        finalPayload.blocks.push({
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Diff Summary:*\n\`\`\`${summaryText}\`\`\``
+          }
+        });
+
+        // Add View Button
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.CONVEX_SITE_URL || 'http://localhost:3000';
+        // @ts-ignore
+        finalPayload.blocks.push({
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: "View Full Changes",
+                emoji: true
+              },
+              url: appUrl,
+              style: "primary"
+            }
+          ]
+        });
+      }
+
       // Check if the webhook URL is localhost or a private network
       const isLocalhost = args.webhookUrl.includes('localhost') ||
         args.webhookUrl.includes('127.0.0.1') ||
@@ -92,7 +182,7 @@ export const sendWebhookNotification = internalAction({
           },
           body: JSON.stringify({
             targetUrl: args.webhookUrl,
-            payload: payload,
+            payload: finalPayload,
           }),
         });
 
@@ -114,7 +204,7 @@ export const sendWebhookNotification = internalAction({
             'Content-Type': 'application/json',
             'User-Agent': 'Kabuki-Observer/1.0',
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(finalPayload),
         });
 
         if (!response.ok) {
@@ -253,6 +343,63 @@ export const sendCrawlWebhook = internalAction({
     try {
       console.log(`Sending crawl webhook to ${args.webhookUrl}`);
 
+      // Check if it's a Slack webhook
+      const isSlack = args.webhookUrl.includes('hooks.slack.com');
+      let finalPayload = payload;
+
+      if (isSlack) {
+        console.log("Detected Slack webhook URL. Formatting crawl payload for Slack.");
+        
+        // Format for Slack Block Kit
+        const summaryText = `Completed in ${payload.crawlSummary.duration}. Found ${args.pagesFound} pages.`;
+        
+        finalPayload = {
+          // @ts-ignore
+          blocks: [
+            {
+              type: "header",
+              text: {
+                type: "plain_text",
+                text: `🕷️ Crawl Completed: ${args.websiteName}`,
+                emoji: true
+              }
+            },
+            {
+              type: "section",
+              fields: [
+                {
+                  type: "mrkdwn",
+                  text: `*Website:*\n<${args.websiteUrl}|${args.websiteName}>`
+                },
+                {
+                  type: "mrkdwn",
+                  text: `*Pages Found:*\n${args.pagesFound}`
+                }
+              ]
+            },
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: `*Session Info:*\n${summaryText}`
+              }
+            },
+            {
+              type: "context",
+              elements: [
+                {
+                  type: "mrkdwn",
+                  text: "Individual page changes will be sent as separate notifications."
+                }
+              ]
+            },
+            {
+              type: "divider"
+            }
+          ]
+        };
+      }
+
       // Check if the webhook URL is localhost or a private network
       const isLocalhost = args.webhookUrl.includes('localhost') ||
         args.webhookUrl.includes('127.0.0.1') ||
@@ -273,7 +420,7 @@ export const sendCrawlWebhook = internalAction({
           },
           body: JSON.stringify({
             targetUrl: args.webhookUrl,
-            payload: payload,
+            payload: finalPayload,
           }),
         });
 
@@ -295,7 +442,7 @@ export const sendCrawlWebhook = internalAction({
             'Content-Type': 'application/json',
             'User-Agent': 'Kabuki-Observer/1.0',
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(finalPayload),
         });
 
         if (!response.ok) {

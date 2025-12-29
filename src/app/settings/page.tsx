@@ -775,6 +775,24 @@ Analyze the provided diff and return a JSON response with:
                           <p className="text-sm text-gray-500 mt-1">
                             This webhook will be used as default for new monitors if not specified
                           </p>
+
+                          {/* Slack Integration Info */}
+                          <div className="mt-3 p-3 bg-blue-50 text-blue-800 rounded-md border border-blue-100 text-sm">
+                            <p className="font-semibold flex items-center gap-2 mb-2">
+                              <img src="https://a.slack-edge.com/80588/marketing/img/meta/favicon-32.png" className="w-4 h-4" alt="Slack" />
+                              Slack Integration
+                            </p>
+                            <p className="mb-2">To get notifications in Slack:</p>
+                            <ol className="list-decimal list-inside space-y-1 text-xs">
+                              <li>Go to <a href="https://api.slack.com/apps" target="_blank" className="underline">api.slack.com/apps</a> and create a new app</li>
+                              <li>Enable <strong>Incoming Webhooks</strong> in the sidebar</li>
+                              <li>Click "Add New Webhook to Workspace"</li>
+                              <li>Copy the Webhook URL and paste it above</li>
+                            </ol>
+                            <p className="mt-2 text-xs italic">
+                              We automatically detect Slack URLs and format messages beautifully for Slack!
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
