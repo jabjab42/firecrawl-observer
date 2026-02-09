@@ -35,7 +35,7 @@ interface WebhookConfigModalProps {
 }
 
 export function WebhookConfigModal({ isOpen, onClose, onSave, initialConfig, websiteName }: WebhookConfigModalProps) {
-  const [notificationPreference, setNotificationPreference] = useState(initialConfig?.notificationPreference || 'none')
+  const [notificationPreference, setNotificationPreference] = useState(initialConfig?.notificationPreference || 'webhook')
   const [webhookUrl, setWebhookUrl] = useState(initialConfig?.webhookUrl || '')
   const [checkInterval, setCheckInterval] = useState(String(initialConfig?.checkInterval || 60))
   const [monitorType, setMonitorType] = useState(initialConfig?.monitorType || 'single_page')

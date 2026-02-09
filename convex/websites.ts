@@ -31,7 +31,9 @@ export const createWebsite = mutation({
 
     // Get user settings for default webhook
     let webhookUrl = args.webhookUrl;
-    if (!webhookUrl && args.notificationPreference && ['webhook', 'both'].includes(args.notificationPreference)) {
+    const effectivePreference = args.notificationPreference || "webhook";
+    
+    if (!webhookUrl && ['webhook', 'both'].includes(effectivePreference)) {
       const userSettings = await ctx.db
         .query("userSettings")
         .withIndex("by_user", (q: any) => q.eq("userId", user._id))
@@ -48,7 +50,7 @@ export const createWebsite = mutation({
       userId: user._id,
       isActive: true,
       checkInterval: args.checkInterval,
-      notificationPreference: args.notificationPreference || "none",
+      notificationPreference: effectivePreference,
       webhookUrl,
       monitorType: args.monitorType || "single_page",
       crawlLimit: args.crawlLimit,

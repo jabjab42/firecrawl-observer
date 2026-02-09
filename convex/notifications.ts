@@ -74,7 +74,7 @@ export const sendWebhookNotification = internalAction({
 
       // Check if it's a Slack webhook
       const isSlack = args.webhookUrl.includes('hooks.slack.com');
-      let finalPayload = payload;
+      let finalPayload: any = payload;
 
       if (isSlack) {
         console.log("Detected Slack webhook URL. Formatting payload for Slack.");
@@ -352,7 +352,7 @@ export const sendCrawlWebhook = internalAction({
 
       // Check if it's a Slack webhook
       const isSlack = args.webhookUrl.includes('hooks.slack.com');
-      let finalPayload = payload;
+      let finalPayload: any = payload;
 
       if (isSlack) {
         console.log("Detected Slack webhook URL. Formatting crawl payload for Slack.");
