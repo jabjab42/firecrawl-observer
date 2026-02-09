@@ -95,8 +95,9 @@ export const sendWebhookNotification = internalAction({
         
         // Format for Slack Block Kit
         const sanitizedWebsiteName = escapeSlackMrkdwn(args.websiteName);
+        // Don't escape < and > in reasoning because AI generates Slack mrkdwn links <url|text>
         const reasoning = args.aiAnalysis?.reasoning 
-          ? truncate(escapeSlackMrkdwn(args.aiAnalysis.reasoning), 3000)
+          ? truncate(args.aiAnalysis.reasoning.replace(/&/g, '&amp;'), 3000)
           : undefined;
         
         // Status icon
