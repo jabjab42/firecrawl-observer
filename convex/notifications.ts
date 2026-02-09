@@ -78,24 +78,40 @@ export const sendWebhookNotification = internalAction({
 
       if (isSlack) {
         console.log("Detected Slack webhook URL. Formatting payload for Slack.");
+
+        // Helper to escape Slack special characters
+        const escapeSlackMrkdwn = (text: string) => {
+          return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        };
+
+        // Helper to truncate string
+        const truncate = (text: string, limit: number) => {
+          if (text.length <= limit) return text;
+          return text.substring(0, limit - 3) + "...";
+        };
         
         // Format for Slack Block Kit
-        const summaryText = args.diff?.text ? 
-          args.diff.text.substring(0, 500) + (args.diff.text.length > 500 ? "..." : "") : 
-          "Aucun changement de texte détecté.";
+        const sanitizedWebsiteName = escapeSlackMrkdwn(args.websiteName);
+        const reasoning = args.aiAnalysis?.reasoning 
+          ? truncate(escapeSlackMrkdwn(args.aiAnalysis.reasoning), 3000)
+          : undefined;
         
-        // Status color
-        const statusColor = args.aiAnalysis?.isMeaningfulChange ? "#22c55e" : "#f97316";
+        // Status icon
         const statusIcon = args.aiAnalysis?.isMeaningfulChange ? "🚨" : "📝";
 
         finalPayload = {
+          // Top-level text field is required/recommended as a fallback
+          text: `${statusIcon} Changement Détecté : ${sanitizedWebsiteName}`,
           // @ts-ignore
           blocks: [
             {
               type: "header",
               text: {
                 type: "plain_text",
-                text: `${statusIcon} Changement Détecté : ${args.websiteName}`,
+                text: truncate(`${statusIcon} Changement Détecté : ${args.websiteName}`, 3000),
                 emoji: true
               }
             },
@@ -104,7 +120,7 @@ export const sendWebhookNotification = internalAction({
               fields: [
                 {
                   type: "mrkdwn",
-                  text: `*Site Web :*\n<${args.websiteUrl}|${args.websiteName}>`
+                  text: `*Site Web :*\n<${args.websiteUrl}|${sanitizedWebsiteName}>`
                 },
                 {
                   type: "mrkdwn",
@@ -119,28 +135,18 @@ export const sendWebhookNotification = internalAction({
         };
 
         // Add AI Analysis if available
-        if (args.aiAnalysis) {
+        if (reasoning) {
           // @ts-ignore
           finalPayload.blocks.push({
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `${args.aiAnalysis.reasoning}`
+              text: reasoning
             }
           });
           // @ts-ignore
           finalPayload.blocks.push({ type: "divider" });
         }
-
-        // Add Diff Summary
-        // @ts-ignore
-        // finalPayload.blocks.push({
-        //   type: "section",
-        //   text: {
-        //     type: "mrkdwn",
-        //     text: `*Diff Summary:*\n\`\`\`${summaryText}\`\`\``
-        //   }
-        // });
 
         // Add View Button - REMOVED per user request
         // const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.CONVEX_SITE_URL || 'http://localhost:3000';
@@ -208,8 +214,9 @@ export const sendWebhookNotification = internalAction({
         });
 
         if (!response.ok) {
-          console.error(`Webhook failed: ${response.status} ${response.statusText}`);
-          throw new Error(`Webhook failed with status ${response.status}`);
+          const errorDetails = await response.text();
+          console.error(`Webhook failed with status ${response.status}: ${errorDetails}`);
+          throw new Error(`Webhook failed with status ${response.status}: ${errorDetails}`);
         }
 
         const responseData = await response.text();
