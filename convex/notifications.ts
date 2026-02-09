@@ -203,7 +203,8 @@ export const sendWebhookNotification = internalAction({
 
         return { success: responseData.success, status: responseData.status };
       } else {
-        // Direct request for public URLs
+        console.log("DEBUG: Final Webhook Payload:", JSON.stringify(finalPayload, null, 2));
+
         const response = await fetch(args.webhookUrl, {
           method: 'POST',
           headers: {
@@ -215,7 +216,7 @@ export const sendWebhookNotification = internalAction({
 
         if (!response.ok) {
           const errorDetails = await response.text();
-          console.error(`Webhook failed with status ${response.status}: ${errorDetails}`);
+          console.error(`DEBUG: Webhook failed | Status: ${response.status} ${response.statusText} | Response: ${errorDetails}`);
           throw new Error(`Webhook failed with status ${response.status}: ${errorDetails}`);
         }
 
@@ -442,7 +443,8 @@ export const sendCrawlWebhook = internalAction({
 
         return { success: responseData.success, status: responseData.status };
       } else {
-        // Direct request for public URLs
+        console.log("DEBUG: Final Crawl Webhook Payload:", JSON.stringify(finalPayload, null, 2));
+
         const response = await fetch(args.webhookUrl, {
           method: 'POST',
           headers: {
@@ -453,8 +455,9 @@ export const sendCrawlWebhook = internalAction({
         });
 
         if (!response.ok) {
-          console.error(`Crawl webhook failed: ${response.status} ${response.statusText}`);
-          throw new Error(`Webhook failed with status ${response.status}`);
+          const errorDetails = await response.text();
+          console.error(`DEBUG: Crawl Webhook failed | Status: ${response.status} ${response.statusText} | Response: ${errorDetails}`);
+          throw new Error(`Webhook failed with status ${response.status}: ${errorDetails}`);
         }
 
         console.log(`Crawl webhook sent successfully`);
