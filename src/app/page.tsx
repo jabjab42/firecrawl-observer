@@ -1900,7 +1900,7 @@ export default function HomePage() {
               deepAnalysisEnabled: websites?.find(w => w._id === editingWebsiteId)?.deepAnalysisEnabled || false,
               headers: websites?.find(w => w._id === editingWebsiteId)?.headers || ''
             } : {
-              notificationPreference: 'none',
+              notificationPreference: 'webhook',
               checkInterval: 60,
               monitorType: 'single_page',
               crawlLimit: 5,
