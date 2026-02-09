@@ -439,9 +439,12 @@ export const handleAIBasedNotifications = internalAction({
         return;
       }
 
+      // Resolve webhook URL (fallback to default if not set on website)
+      const resolvedWebhookUrl = website.webhookUrl || userSettings?.defaultWebhookUrl;
+
       // Check if we should send webhook notification
       const shouldSendWebhook = (website.notificationPreference === "webhook" || website.notificationPreference === "both") &&
-        website.webhookUrl &&
+        resolvedWebhookUrl &&
         (!userSettings?.webhookOnlyIfMeaningful || args.isMeaningful);
 
       // Check if we should send email notification
@@ -452,10 +455,10 @@ export const handleAIBasedNotifications = internalAction({
       console.log(`[Notifications] Config - WebhookURL: ${!!website.webhookUrl}, EmailOnlyIfMeaningful: ${userSettings?.emailOnlyIfMeaningful}, WebhookOnlyIfMeaningful: ${userSettings?.webhookOnlyIfMeaningful}`);
 
       // Send webhook notification if conditions are met
-      if (shouldSendWebhook && website.webhookUrl) {
-        console.log(`[Notifications] Queueing Webhook to ${website.webhookUrl}`);
+      if (shouldSendWebhook && resolvedWebhookUrl) {
+        console.log(`[Notifications] Queueing Webhook to ${resolvedWebhookUrl}`);
         await ctx.scheduler.runAfter(0, internal.notifications.sendWebhookNotification, {
-          webhookUrl: website.webhookUrl,
+          webhookUrl: resolvedWebhookUrl,
           websiteId: scrapeResult.websiteId,
           websiteName: website.name,
           websiteUrl: args.websiteUrl,

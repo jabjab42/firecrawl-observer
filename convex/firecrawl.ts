@@ -259,10 +259,13 @@ export const scrapeUrl = internalAction({
           });
 
           if (website && website.notificationPreference !== "none") {
+            // Resolve webhook URL (fallback to default if not set on website)
+            const resolvedWebhookUrl = website.webhookUrl || userSettings?.defaultWebhookUrl;
+
             // Send webhook notification
-            if ((website.notificationPreference === "webhook" || website.notificationPreference === "both") && website.webhookUrl) {
+            if ((website.notificationPreference === "webhook" || website.notificationPreference === "both") && resolvedWebhookUrl) {
               await ctx.scheduler.runAfter(0, internal.notifications.sendWebhookNotification, {
-                webhookUrl: website.webhookUrl,
+                webhookUrl: resolvedWebhookUrl,
                 websiteId: args.websiteId,
                 websiteName: website.name,
                 websiteUrl: args.url, // Use the actual page URL, not the root website URL
