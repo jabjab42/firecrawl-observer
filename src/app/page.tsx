@@ -69,6 +69,7 @@ export default function HomePage() {
   // Convex queries and mutations
   const websites = useQuery(api.websites.getUserWebsites)
   const firecrawlKey = useQuery(api.firecrawlKeys.getUserFirecrawlKey)
+  const userSettings = useQuery(api.userSettings.getUserSettings)
 
   // Track website list updates
   useEffect(() => {
@@ -1901,6 +1902,7 @@ export default function HomePage() {
               headers: websites?.find(w => w._id === editingWebsiteId)?.headers || ''
             } : {
               notificationPreference: 'webhook',
+              webhookUrl: userSettings?.defaultWebhookUrl || undefined,
               checkInterval: 60,
               monitorType: 'single_page',
               crawlLimit: 5,
