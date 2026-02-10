@@ -204,7 +204,7 @@ export const sendWebhookNotification = internalAction({
 
         return { success: responseData.success, status: responseData.status };
       } else {
-        console.log("DEBUG: Final Webhook Payload:", JSON.stringify(finalPayload, null, 2));
+        console.log(`[Webhook] FINAL PAYLOAD for ${args.websiteName}:`, JSON.stringify(finalPayload, null, 2));
 
         const response = await fetch(args.webhookUrl, {
           method: 'POST',

@@ -314,13 +314,20 @@ Please analyze these changes and determine if they are meaningful.`,
 
                 // Construct consolidated reasoning - Only include "GO" results
                 let consolidatedReasoning = ``;
+                let includeCount = 0;
 
                 validResults.forEach((r: any) => {
                   if (r.isGo) {
+                    includeCount++;
                     const icon = '✅';
                     consolidatedReasoning += `${icon} [${r.score}/100]\n<${r.url}|Voir l'annonce>\n${r.reasoning}\n\n`;
                   }
                 });
+
+                console.log(`[Go/No Go] Filtering complete. Found ${validResults.length} total, kept ${includeCount} (GO status)`);
+                if (includeCount > 0) {
+                  console.log(`[Go/No Go] Final Reason snippet: ${consolidatedReasoning.substring(0, 100)}...`);
+                }
 
                 // consolidatedReasoning += `Original Change: ${reasoning}`;
 
@@ -485,6 +492,8 @@ export const handleAIBasedNotifications = internalAction({
 
         if (emailConfig?.email && emailConfig.isVerified) {
           console.log(`[Notifications] Queueing Email to ${emailConfig.email}`);
+          // Log a snippet of the reasoning that will be in the email
+          console.log(`[Notifications] Email Content Reason Snippet: ${(args.aiAnalysis?.reasoning || "").substring(0, 100)}...`);
           await ctx.scheduler.runAfter(0, internal.notifications.sendEmailNotification, {
             email: emailConfig.email,
             websiteName: website.name,
