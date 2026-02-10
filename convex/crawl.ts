@@ -38,7 +38,7 @@ export const performCrawl = internalAction({
 
     try {
       // Perform the crawl using Firecrawl
-      const firecrawl = await getFirecrawlClient(ctx, args.userId);
+      const { client: firecrawl, instanceType } = await getFirecrawlClient(ctx, args.userId);
 
       // Initiating Firecrawl crawl
 
@@ -147,12 +147,32 @@ export const performCrawl = internalAction({
       // Don't send crawl summary webhook - individual page changes will trigger their own webhooks
 
       return { success: true, pagesFound: pages.length };
-    } catch (error) {
+    } catch (error: any) {
       // Mark session as failed
       await ctx.runMutation(internal.crawl.failCrawlSession, {
         sessionId,
         error: error instanceof Error ? error.message : "Unknown error",
       });
+
+      // Trigger error notification if it's a Cloud instance
+      const { instanceType } = await getFirecrawlClient(ctx, args.userId);
+      if (instanceType === "cloud") {
+        const userSettings = await ctx.runQuery(internal.userSettings.getUserSettingsInternal, {
+          userId: args.userId,
+        });
+
+        const resolvedWebhookUrl = website?.webhookUrl || userSettings?.defaultWebhookUrl;
+
+        if (resolvedWebhookUrl) {
+          await ctx.scheduler.runAfter(0, internal.notifications.sendErrorNotification, {
+            webhookUrl: resolvedWebhookUrl,
+            error: error instanceof Error ? error.message : "Unknown crawl error",
+            websiteName: website?.name || "Website Monitor",
+            websiteUrl: website?.url,
+          });
+        }
+      }
+
       throw error;
     }
   },
@@ -294,7 +314,7 @@ export const checkCrawlJobStatus = internalAction({
     console.log(`Checking crawl job status: ${args.jobId} (attempt ${args.attempt})`);
 
     try {
-      const firecrawl = await getFirecrawlClient(ctx, args.userId);
+      const { client: firecrawl, instanceType } = await getFirecrawlClient(ctx, args.userId);
 
       // Check job status
       const status = await firecrawl.checkCrawlStatus(args.jobId) as any;
@@ -373,12 +393,38 @@ export const checkCrawlJobStatus = internalAction({
           throw new Error("Crawl job timed out after 10 minutes");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       // Mark session as failed
       await ctx.runMutation(internal.crawl.failCrawlSession, {
         sessionId: args.sessionId,
         error: error instanceof Error ? error.message : "Unknown error",
       });
+
+      // Trigger error notification if it's a Cloud instance
+      const { instanceType } = await getFirecrawlClient(ctx, args.userId);
+      if (instanceType === "cloud") {
+        const userSettings = await ctx.runQuery(internal.userSettings.getUserSettingsInternal, {
+          userId: args.userId,
+        });
+
+        // Get website details
+        const website = await ctx.runQuery(internal.websites.getWebsite, {
+          websiteId: args.websiteId,
+          userId: args.userId,
+        });
+
+        const resolvedWebhookUrl = website?.webhookUrl || userSettings?.defaultWebhookUrl;
+
+        if (resolvedWebhookUrl) {
+          await ctx.scheduler.runAfter(0, internal.notifications.sendErrorNotification, {
+            webhookUrl: resolvedWebhookUrl,
+            error: error instanceof Error ? error.message : "Unknown crawl job error",
+            websiteName: website?.name || "Website Monitor",
+            websiteUrl: website?.url,
+          });
+        }
+      }
+
       throw error;
     }
   },

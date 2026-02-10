@@ -233,6 +233,113 @@ export const sendWebhookNotification = internalAction({
   },
 });
 
+// Send error notification for Firecrawl failures (e.g., out of credits)
+export const sendErrorNotification = internalAction({
+  args: {
+    webhookUrl: v.string(),
+    error: v.string(),
+    websiteName: v.string(),
+    websiteUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    console.log(`Sending Firecrawl error notification for ${args.websiteName}`);
+
+    const isSlack = args.webhookUrl.includes('hooks.slack.com');
+    const timestamp = new Date().toISOString();
+
+    let payload: any = {
+      event: "firecrawl_error",
+      website: {
+        name: args.websiteName,
+        url: args.websiteUrl,
+      },
+      error: args.error,
+      timestamp,
+    };
+
+    if (isSlack) {
+      console.log("Formatting error notification for Slack");
+      
+      // Use red color/warning style for error
+      payload = {
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "🚨 Firecrawl Error Detected",
+              emoji: true
+            }
+          },
+          {
+            type: "section",
+            fields: [
+              {
+                type: "mrkdwn",
+                text: `*Website:*\n${args.websiteName}`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Time:*\n${timestamp}`
+              }
+            ]
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Error Message:*\n\`\`\`${args.error}\`\`\``
+            }
+          }
+        ]
+      };
+
+      if (args.websiteUrl) {
+        payload.blocks.push({
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*URL:* <${args.websiteUrl}|View Website>`
+          }
+        });
+      }
+
+      // Add a helpful hint for common errors
+      if (args.error.toLowerCase().includes("credit") || args.error.includes("402")) {
+        payload.blocks.push({
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: "💡 *Tip:* This error often means your Firecrawl Cloud credits are exhausted."
+            }
+          ]
+        });
+      }
+    }
+
+    try {
+      const response = await fetch(args.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Kabuki-Observer/1.0',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to send error notification: ${response.status} ${errorText}`);
+      } else {
+        console.log("Error notification sent successfully");
+      }
+    } catch (error) {
+      console.error("Error sending error notification fetch:", error);
+    }
+  }
+});
+
 export const sendEmailNotification = internalAction({
   args: {
     email: v.string(),

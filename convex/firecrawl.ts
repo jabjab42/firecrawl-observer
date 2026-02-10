@@ -90,7 +90,7 @@ class CustomFirecrawlApp {
   }
 }
 
-export const getFirecrawlClient = async (ctx: any, userId: string): Promise<any> => {
+export const getFirecrawlClient = async (ctx: any, userId: string): Promise<{ client: any, instanceType: string }> => {
   // First try to get user's API key from internal query
   const userKeyData: any = await ctx.runQuery(internal.firecrawlKeys.getDecryptedFirecrawlKey, { userId });
   const envApiUrl = process.env.FIRECRAWL_API_URL;
@@ -105,21 +105,21 @@ export const getFirecrawlClient = async (ctx: any, userId: string): Promise<any>
 
     // Use user's self-hosted instance if configured
     if (instanceType === "self-hosted" && userApiUrl) {
-      return new CustomFirecrawlApp({ apiKey: userKeyData.key, apiUrl: userApiUrl });
+      return { client: new CustomFirecrawlApp({ apiKey: userKeyData.key, apiUrl: userApiUrl }), instanceType };
     }
 
     // If user explicitly selected cloud, use cloud app (ignore envApiUrl)
     if (instanceType === "cloud") {
-      return new FirecrawlApp({ apiKey: userKeyData.key });
+      return { client: new FirecrawlApp({ apiKey: userKeyData.key }), instanceType };
     }
 
     // Use environment self-hosted instance if configured (fallback)
     if (envApiUrl) {
-      return new CustomFirecrawlApp({ apiKey: userKeyData.key, apiUrl: envApiUrl });
+      return { client: new CustomFirecrawlApp({ apiKey: userKeyData.key, apiUrl: envApiUrl }), instanceType: "self-hosted" };
     }
 
     // Default to cloud
-    return new FirecrawlApp({ apiKey: userKeyData.key });
+    return { client: new FirecrawlApp({ apiKey: userKeyData.key }), instanceType: "cloud" };
   }
 
   // Fallback to environment variable if user hasn't set their own key
@@ -131,9 +131,9 @@ export const getFirecrawlClient = async (ctx: any, userId: string): Promise<any>
 
   // Using environment Firecrawl API key
   if (envApiUrl) {
-    return new CustomFirecrawlApp({ apiKey, apiUrl: envApiUrl });
+    return { client: new CustomFirecrawlApp({ apiKey, apiUrl: envApiUrl }), instanceType: "self-hosted" };
   }
-  return new FirecrawlApp({ apiKey });
+  return { client: new FirecrawlApp({ apiKey }), instanceType: "cloud" };
 };
 
 // Scrape a URL and track changes
@@ -150,7 +150,7 @@ export const scrapeUrl = internalAction({
     visibility: string | undefined;
     previousScrapeAt: string | undefined;
   }> => {
-    const firecrawl = await getFirecrawlClient(ctx, args.userId);
+    const { client: firecrawl, instanceType } = await getFirecrawlClient(ctx, args.userId);
 
     // Get website details to check for headers
     const website = await ctx.runQuery(internal.websites.getWebsite, {
@@ -313,8 +313,34 @@ export const scrapeUrl = internalAction({
         visibility: changeTracking?.visibility,
         previousScrapeAt: changeTracking?.previousScrapeAt,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Firecrawl scrape error:", error);
+
+      // Trigger error notification if it's a Cloud instance
+      if (instanceType === "cloud") {
+        // Get user settings for default webhook
+        const userSettings = await ctx.runQuery(internal.userSettings.getUserSettingsInternal, {
+          userId: args.userId,
+        });
+
+        // Get website details for notifications
+        const website = await ctx.runQuery(internal.websites.getWebsite, {
+          websiteId: args.websiteId,
+          userId: args.userId,
+        });
+
+        const resolvedWebhookUrl = website?.webhookUrl || userSettings?.defaultWebhookUrl;
+
+        if (resolvedWebhookUrl) {
+          await ctx.scheduler.runAfter(0, internal.notifications.sendErrorNotification, {
+            webhookUrl: resolvedWebhookUrl,
+            error: error.message || "Unknown Firecrawl error",
+            websiteName: website?.name || "Website Monitor",
+            websiteUrl: args.url,
+          });
+        }
+      }
+
       throw error;
     }
   },
@@ -327,7 +353,7 @@ export const scrapeUrlForAnalysis = internalAction({
     userId: v.id("users"),
   },
   handler: async (ctx: any, args: any) => {
-    const firecrawl = await getFirecrawlClient(ctx, args.userId);
+    const { client: firecrawl } = await getFirecrawlClient(ctx, args.userId);
     try {
       const result = await firecrawl.scrapeUrl(args.url, {
         formats: ["markdown"],
@@ -404,7 +430,7 @@ export const crawlWebsite = action({
   handler: async (ctx: any, args: any) => {
     const userId = await requireCurrentUserForAction(ctx);
 
-    const firecrawl = await getFirecrawlClient(ctx, userId);
+    const { client: firecrawl } = await getFirecrawlClient(ctx, userId);
 
     try {
       const crawlResult = await firecrawl.crawlUrl(args.url, {
@@ -442,7 +468,7 @@ export const scrapePageLinks = internalAction({
     userId: v.id("users"),
   },
   handler: async (ctx: any, args: any): Promise<any> => {
-    const firecrawl = await getFirecrawlClient(ctx, args.userId);
+    const { client: firecrawl } = await getFirecrawlClient(ctx, args.userId);
 
     try {
       const response: any = await firecrawl.scrapeUrl(args.url, {

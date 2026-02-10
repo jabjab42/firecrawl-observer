@@ -312,12 +312,14 @@ Please analyze these changes and determine if they are meaningful.`,
                 const goResults = validResults.filter((r: any) => r.isGo);
                 const bestResult = validResults.reduce((prev: any, current: any) => (prev.score > current.score) ? prev : current, validResults[0]);
 
-                // Construct consolidated reasoning
+                // Construct consolidated reasoning - Only include "GO" results
                 let consolidatedReasoning = ``;
 
                 validResults.forEach((r: any) => {
-                  const icon = r.isGo ? '✅' : '❌';
-                  consolidatedReasoning += `${icon} [${r.score}/100]\n<${r.url}|Voir l'annonce>\n${r.reasoning}\n\n`;
+                  if (r.isGo) {
+                    const icon = '✅';
+                    consolidatedReasoning += `${icon} [${r.score}/100]\n<${r.url}|Voir l'annonce>\n${r.reasoning}\n\n`;
+                  }
                 });
 
                 // consolidatedReasoning += `Original Change: ${reasoning}`;
