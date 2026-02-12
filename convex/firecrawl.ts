@@ -160,6 +160,7 @@ export const scrapeUrl = internalAction({
 
     let scrapeOptions: any = {
       formats: ["markdown", "links", "changeTracking"],
+      timeout: 120000,
       changeTrackingOptions: {
         modes: ["git-diff"], // Enable git-diff to see what changed
       }
@@ -357,6 +358,7 @@ export const scrapeUrlForAnalysis = internalAction({
     try {
       const result = await firecrawl.scrapeUrl(args.url, {
         formats: ["markdown"],
+        timeout: 120000,
       }) as any;
 
       if (!result.success) {
@@ -437,6 +439,7 @@ export const crawlWebsite = action({
         limit: args.limit || 10,
         scrapeOptions: {
           formats: ["markdown", "changeTracking"],
+          timeout: 120000,
         },
       }) as any;
 
@@ -473,6 +476,7 @@ export const scrapePageLinks = internalAction({
     try {
       const response: any = await firecrawl.scrapeUrl(args.url, {
         formats: ["links"],
+        timeout: 120000,
       });
 
       if (!response.success) {

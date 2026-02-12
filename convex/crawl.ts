@@ -48,6 +48,7 @@ export const performCrawl = internalAction({
         maxDepth: website.crawlDepth || 3,
         scrapeOptions: {
           formats: ["markdown", "changeTracking"],
+          timeout: 120000,
         },
       };
 
