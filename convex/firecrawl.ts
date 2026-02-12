@@ -316,32 +316,6 @@ export const scrapeUrl = internalAction({
       };
     } catch (error: any) {
       console.error("Firecrawl scrape error:", error);
-
-      // Trigger error notification if it's a Cloud instance
-      if (instanceType === "cloud") {
-        // Get user settings for default webhook
-        const userSettings = await ctx.runQuery(internal.userSettings.getUserSettingsInternal, {
-          userId: args.userId,
-        });
-
-        // Get website details for notifications
-        const website = await ctx.runQuery(internal.websites.getWebsite, {
-          websiteId: args.websiteId,
-          userId: args.userId,
-        });
-
-        const resolvedWebhookUrl = website?.webhookUrl || userSettings?.defaultWebhookUrl;
-
-        if (resolvedWebhookUrl) {
-          await ctx.scheduler.runAfter(0, internal.notifications.sendErrorNotification, {
-            webhookUrl: resolvedWebhookUrl,
-            error: error.message || "Unknown Firecrawl error",
-            websiteName: website?.name || "Website Monitor",
-            websiteUrl: args.url,
-          });
-        }
-      }
-
       throw error;
     }
   },

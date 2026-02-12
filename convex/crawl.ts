@@ -154,26 +154,6 @@ export const performCrawl = internalAction({
         sessionId,
         error: error instanceof Error ? error.message : "Unknown error",
       });
-
-      // Trigger error notification if it's a Cloud instance
-      const { instanceType } = await getFirecrawlClient(ctx, args.userId);
-      if (instanceType === "cloud") {
-        const userSettings = await ctx.runQuery(internal.userSettings.getUserSettingsInternal, {
-          userId: args.userId,
-        });
-
-        const resolvedWebhookUrl = website?.webhookUrl || userSettings?.defaultWebhookUrl;
-
-        if (resolvedWebhookUrl) {
-          await ctx.scheduler.runAfter(0, internal.notifications.sendErrorNotification, {
-            webhookUrl: resolvedWebhookUrl,
-            error: error instanceof Error ? error.message : "Unknown crawl error",
-            websiteName: website?.name || "Website Monitor",
-            websiteUrl: website?.url,
-          });
-        }
-      }
-
       throw error;
     }
   },
@@ -400,32 +380,6 @@ export const checkCrawlJobStatus = internalAction({
         sessionId: args.sessionId,
         error: error instanceof Error ? error.message : "Unknown error",
       });
-
-      // Trigger error notification if it's a Cloud instance
-      const { instanceType } = await getFirecrawlClient(ctx, args.userId);
-      if (instanceType === "cloud") {
-        const userSettings = await ctx.runQuery(internal.userSettings.getUserSettingsInternal, {
-          userId: args.userId,
-        });
-
-        // Get website details
-        const website = await ctx.runQuery(internal.websites.getWebsite, {
-          websiteId: args.websiteId,
-          userId: args.userId,
-        });
-
-        const resolvedWebhookUrl = website?.webhookUrl || userSettings?.defaultWebhookUrl;
-
-        if (resolvedWebhookUrl) {
-          await ctx.scheduler.runAfter(0, internal.notifications.sendErrorNotification, {
-            webhookUrl: resolvedWebhookUrl,
-            error: error instanceof Error ? error.message : "Unknown crawl job error",
-            websiteName: website?.name || "Website Monitor",
-            websiteUrl: website?.url,
-          });
-        }
-      }
-
       throw error;
     }
   },
